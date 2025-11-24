@@ -1,26 +1,85 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  /* Couleur principale (Bleu) */
+  --color-primary-50: #E6F4F9;
+  --color-primary-100: #CCE9F3;
+  --color-primary-200: #99D3E7;
+  --color-primary-300: #66BDDB;
+  --color-primary-400: #33A7CF;
+  --color-primary-500: #0891B2;
+  --color-primary-600: #0077B6;
+  --color-primary-700: #005A8A;
+  --color-primary-800: #003D5E;
+  --color-primary-900: #002032;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Couleur secondaire (Orange/Jaune) */
+  --color-secondary-50: #FFF8E6;
+  --color-secondary-100: #FFF1CC;
+  --color-secondary-200: #FFE399;
+  --color-secondary-300: #FFD566;
+  --color-secondary-400: #FFC733;
+  --color-secondary-500: #F9A825;
+  --color-secondary-600: #F57C00;
+  --color-secondary-700: #C46200;
+  --color-secondary-800: #934A00;
+  --color-secondary-900: #623100;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  /* Couleur d'accent (Vert/Teal) */
+  --color-accent-50: #E6F7F5;
+  --color-accent-100: #CCEFEB;
+  --color-accent-200: #99DFD7;
+  --color-accent-300: #66CFC3;
+  --color-accent-400: #33BFAF;
+  --color-accent-500: #26A69A;
+  --color-accent-600: #00897B;
+  --color-accent-700: #006B5E;
+  --color-accent-800: #004D42;
+  --color-accent-900: #002F28;
+
+  /* Couleurs neutres */
+  --color-neutral-50: #F8FAFC;
+  --color-neutral-100: #F1F5F9;
+  --color-neutral-200: #E2E8F0;
+  --color-neutral-300: #CBD5E1;
+  --color-neutral-400: #94A3B8;
+  --color-neutral-500: #64748B;
+  --color-neutral-600: #475569;
+  --color-neutral-700: #334155;
+  --color-neutral-800: #1E293B;
+  --color-neutral-900: #0F172A;
+
+  /* Fonts */
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-heading: var(--font-poppins), system-ui, sans-serif;
+
+  /* Animations */
+  --animate-fade-in: fadeIn 0.5s ease-out;
+  --animate-slide-up: slideUp 0.5s ease-out;
+  --animate-slide-down: slideDown 0.3s ease-out;
+  --animate-scale-in: scaleIn 0.3s ease-out;
+
+  @keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideDown {
+    0% { opacity: 0; transform: translateY(-10px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes scaleIn {
+    0% { opacity: 0; transform: scale(0.95); }
+    100% { opacity: 1; transform: scale(1); }
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }
