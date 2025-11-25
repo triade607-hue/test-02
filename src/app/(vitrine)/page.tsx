@@ -191,13 +191,13 @@ export default function HomePage() {
       {/* ============================================ */}
       {/* CTA SECTION */}
       {/* ============================================ */}
-      <CtaSection
+      {/* <CtaSection
         title="Prêt à rejoindre l'aventure ?"
         description="Rejoignez notre communauté de passionnés du numérique et participez à la construction de l'écosystème tech africain. Ensemble, formons les talents de demain."
         buttonText="Devenir Membre Maintenant"
         buttonLink="/membership"
         image="/images/cta-image.jpg"
-      />
+      /> */}
 
       {/* ============================================ */}
       {/* NEWSLETTER BANNER */}

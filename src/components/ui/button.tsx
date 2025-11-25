@@ -28,22 +28,22 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      "inline-flex items-center justify-center gap-2 font-semibold transition-all duration-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+      "inline-flex items-center justify-center gap-2 font-semibold transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
 
     const variants = {
       primary:
-        "bg-secondary-500 text-white hover:bg-secondary-600 shadow-md hover:shadow-lg hover:scale-[1.02] focus:ring-secondary-500",
+        "bg-[#F9A825] text-white hover:bg-[#E09000] shadow-sm hover:shadow-md hover:scale-[1.02] focus:ring-[#F9A825]",
       secondary:
-        "bg-primary-600 text-white hover:bg-primary-700 shadow-md hover:shadow-lg hover:scale-[1.02] focus:ring-primary-500",
+        "bg-[#007DC5] text-white hover:bg-[#0066A4] shadow-sm hover:shadow-md hover:scale-[1.02] focus:ring-[#007DC5]",
       outline:
-        "bg-white text-primary-600 border-2 border-primary-600 hover:bg-primary-600 hover:text-white focus:ring-primary-500",
-      ghost: "text-primary-600 hover:bg-primary-50 focus:ring-primary-500",
+        "bg-white border-2 border-[#007DC5] text-[#007DC5] hover:bg-[#007DC5] hover:text-white focus:ring-[#007DC5]",
+      ghost: "text-[#007DC5] hover:bg-[#007DC5]/10 focus:ring-[#007DC5]",
     };
 
     const sizes = {
-      sm: "px-4 py-2 text-sm",
-      md: "px-6 py-3 text-base",
-      lg: "px-8 py-4 text-lg",
+      sm: "px-4 py-2 text-xs rounded-xs",
+      md: "px-6 py-2.5 text-sm rounded-sm",
+      lg: "px-8 py-3 text-md rounded-md",
     };
 
     return (

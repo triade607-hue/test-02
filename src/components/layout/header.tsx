@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,119 +12,173 @@ import { Button } from "@/components/ui";
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
 
+  // Detect scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 0);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const isActive = (href: string) => {
-    if (href === "/") return pathname === "/";
+    if (href === "/" || href === "/home") {
+      return pathname === "/" || pathname === "/home";
+    }
     return pathname.startsWith(href);
   };
 
+  const closeMobileMenu = () => setIsMobileMenuOpen(false);
+
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 lg:h-20">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 lg:w-12 lg:h-12">
-              {/* Placeholder pour le logo - remplacer par Image */}
-              <svg
-                viewBox="0 0 100 100"
-                className="w-full h-full"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <circle cx="50" cy="50" r="45" fill="#0077B6" />
-                <circle cx="50" cy="50" r="20" fill="#F9A825" />
-                <circle cx="50" cy="50" r="8" fill="#26A69A" />
-              </svg>
-            </div>
-            <span className="text-xl lg:text-2xl font-bold">
-              <span className="text-primary-600">imo</span>
-              <span className="text-secondary-500">2</span>
-              <span className="text-accent-500">tun</span>
-            </span>
-          </Link>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-8">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "font-medium transition-colors",
-                  isActive(link.href)
-                    ? "text-primary-600"
-                    : "text-neutral-600 hover:text-primary-600"
-                )}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-
-          {/* CTA Button */}
-          <div className="hidden lg:block">
-            <Link href="/contact">
-              <Button variant="primary">Contactez-nous</Button>
+    <>
+      <header
+        className={cn(
+          "bg-white sticky top-0 z-50 transition-shadow duration-300",
+          isScrolled ? "shadow-md" : "shadow-none"
+        )}
+      >
+        <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12">
+          <div className="flex items-center justify-between h-14 lg:h-18">
+            {/* Logo - Left */}
+            <Link href="/home" className="flex-shrink-0">
+              <Image
+                src="/images/logo.png"
+                alt="imo2tun"
+                width={180}
+                height={60}
+                className="h-12 lg:h-14 w-auto"
+                priority
+              />
             </Link>
-          </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            className="lg:hidden p-2 rounded-lg hover:bg-neutral-100 transition-colors"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label={isMobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
-          >
-            {isMobileMenuOpen ? (
-              <X className="w-6 h-6 text-neutral-700" />
-            ) : (
+            {/* Navigation + CTA - Right (Desktop) */}
+            <div className="hidden lg:flex items-center gap-8">
+              <nav className="flex items-center gap-8">
+                {NAV_LINKS.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      "relative text-[14px] transition-colors pb-1",
+                      isActive(link.href)
+                        ? "text-[#F9A825] font-semibold"
+                        : "text-neutral-900 font-semibold hover:text-[#F9A825]"
+                    )}
+                  >
+                    {link.label}
+                    {isActive(link.href) && (
+                      <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#F9A825] rounded-full" />
+                    )}
+                  </Link>
+                ))}
+              </nav>
+
+              <Link href="/contact">
+                <Button variant="primary" className="rounded-md" size="md">
+                  Contactez-nous
+                </Button>
+              </Link>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              className="lg:hidden p-2 rounded-lg hover:bg-neutral-100 transition-colors"
+              onClick={() => setIsMobileMenuOpen(true)}
+              aria-label="Ouvrir le menu"
+            >
               <Menu className="w-6 h-6 text-neutral-700" />
-            )}
-          </button>
+            </button>
+          </div>
         </div>
-      </div>
+      </header>
 
-      {/* Mobile Menu */}
+      {/* Mobile Sidebar */}
       <AnimatePresence>
         {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="lg:hidden bg-white border-t border-neutral-100"
-          >
-            <nav className="max-w-7xl mx-auto px-4 py-4 space-y-2">
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={cn(
-                    "block py-3 px-4 rounded-lg font-medium transition-colors",
-                    isActive(link.href)
-                      ? "bg-primary-50 text-primary-600"
-                      : "text-neutral-600 hover:bg-neutral-50"
-                  )}
-                >
-                  {link.label}
+          <>
+            {/* Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 bg-black/50 z-50 lg:hidden"
+              onClick={closeMobileMenu}
+            />
+
+            {/* Sidebar */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "tween", duration: 0.3 }}
+              className="fixed top-0 right-0 h-full w-[280px] bg-white shadow-xl z-50 lg:hidden flex flex-col"
+            >
+              {/* Sidebar Header */}
+              <div className="flex items-center justify-between p-6 border-b border-neutral-100">
+                <Link href="/home" onClick={closeMobileMenu}>
+                  <Image
+                    src="/images/logo.png"
+                    alt="imo2tun"
+                    width={120}
+                    height={40}
+                    className="h-10 w-auto"
+                  />
                 </Link>
-              ))}
-              <div className="pt-4">
-                <Link
-                  href="/contact"
-                  onClick={() => setIsMobileMenuOpen(false)}
+                <button
+                  onClick={closeMobileMenu}
+                  className="p-2 rounded-lg hover:bg-neutral-100 transition-colors"
+                  aria-label="Fermer le menu"
                 >
-                  <Button variant="primary" className="w-full">
+                  <X className="w-6 h-6 text-neutral-700" />
+                </button>
+              </div>
+
+              {/* Sidebar Navigation */}
+              <nav className="flex-1 py-6 px-6">
+                <div className="flex flex-col gap-2">
+                  {NAV_LINKS.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={closeMobileMenu}
+                      className={cn(
+                        "relative text-[15px] py-3 transition-colors",
+                        isActive(link.href)
+                          ? "text-[#F9A825] font-semibold"
+                          : "text-neutral-900 font-semibold hover:text-[#F9A825]"
+                      )}
+                    >
+                      {link.label}
+                      {isActive(link.href) && (
+                        <span className="absolute bottom-2 left-0 w-8 h-[2px] bg-[#F9A825] rounded-full" />
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              </nav>
+
+              {/* Sidebar Footer */}
+              <div className="p-6 border-t border-neutral-100">
+                <Link href="/contact" onClick={closeMobileMenu}>
+                  <Button
+                    variant="primary"
+                    className="w-full rounded-sm"
+                    size="sm"
+                  >
                     Contactez-nous
                   </Button>
                 </Link>
               </div>
-            </nav>
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
-    </header>
+    </>
   );
 }
