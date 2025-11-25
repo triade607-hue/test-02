@@ -1,4 +1,3 @@
-import { GraduationCap, Users, Lightbulb } from "lucide-react";
 import Link from "next/link";
 
 // Components
@@ -12,37 +11,12 @@ import {
   ArticleCard,
   TestimonialCard,
   PartnersSlider,
-  CtaSection,
+  // CtaSection,
 } from "@/components/shared";
 import { NewsletterBanner } from "@/components/layout";
 
 // Data
-import { events, articles, testimonials } from "@/lib/data";
-
-// Static data for missions
-const missions = [
-  {
-    icon: <GraduationCap className="w-8 h-8" />,
-    title: "Former les talents",
-    description:
-      "Nous formons les jeunes africains aux métiers du numérique : Cloud, Data, IA, Cybersécurité. Des programmes adaptés aux besoins du marché.",
-    link: "/about",
-  },
-  {
-    icon: <Users className="w-8 h-8" />,
-    title: "Connecter les acteurs",
-    description:
-      "Nous créons des ponts entre experts, entreprises et talents pour favoriser le partage de connaissances et les opportunités professionnelles.",
-    link: "/membership",
-  },
-  {
-    icon: <Lightbulb className="w-8 h-8" />,
-    title: "Innover ensemble",
-    description:
-      "Nous accompagnons l'innovation africaine en mettant en relation startups, mentors et investisseurs pour des projets à impact.",
-    link: "/about",
-  },
-];
+import { events, articles, testimonials, missions } from "@/lib/data";
 
 // Static data for stats
 const stats = [
@@ -63,21 +37,15 @@ export default function HomePage() {
 
   return (
     <>
-      {/* ============================================ */}
       {/* HERO SECTION */}
-      {/* ============================================ */}
       <HeroHome />
 
-      {/* ============================================ */}
       {/* PARTNERS SLIDER */}
-      {/* ============================================ */}
-      <PartnersSlider/>
+      <PartnersSlider />
 
-      {/* ============================================ */}
       {/* MISSION SECTION */}
-      {/* ============================================ */}
       <section className="py-16 lg:py-24 bg-neutral-50">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12">
           <SectionTitle
             title="Notre Mission"
             subtitle="Construire un écosystème vertueux de partage, d'échange et d'innovation dans les métiers du numérique en Afrique."

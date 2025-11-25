@@ -83,10 +83,11 @@ export interface Testimonial {
 }
 
 export interface MissionItem {
-  icon: React.ReactNode;
+  icon: string;
   title: string;
   description: string;
   link?: string;
+  variant?: "featured" | "default";
 }
 
 export interface StatItem {
