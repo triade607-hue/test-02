@@ -104,7 +104,7 @@ export function MissionCard({
               color: isHovered ? "#007DC5" : "#000000",
               borderColor: isHovered ? "#FFFFFF" : "#F9A825",
             }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.1 }}
             className="border-2 font-semibold px-6 py-2.5 rounded-md transition-all duration-100 inline-flex items-center gap-2"
           >
             {linkText}
