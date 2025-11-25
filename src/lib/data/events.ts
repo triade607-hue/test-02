@@ -1,0 +1,61 @@
+import { Event } from "@/types";
+
+export const events: Event[] = [
+  {
+    id: "1",
+    slug: "lancement-imo2tun-2025",
+    title: "Lancement officiel d'imo2tun",
+    description:
+      "Rejoignez-nous pour le lancement officiel de la plateforme imo2tun. Une journée exceptionnelle dédiée à l'innovation numérique africaine.",
+    longDescription:
+      "Cet événement marque le début d'une nouvelle ère pour l'écosystème numérique africain. Venez découvrir notre vision, rencontrer nos partenaires et participer à des ateliers exclusifs.",
+    date: "2025-01-25",
+    startTime: "08:00",
+    endTime: "17:00",
+    location: "Cotonou, Bénin",
+    address: "Azalaï Hotel de la Plage, Boulevard de la Marina",
+    image: "/images/events/lancement-imo2tun.jpg",
+    category: "Conférence",
+    status: "upcoming",
+    isFree: false,
+    price: 0,
+    maxParticipants: 500,
+    registeredCount: 245,
+    tags: ["Lancement", "Innovation", "Numérique"],
+  },
+  {
+    id: "2",
+    slug: "atelier-cloud-computing",
+    title: "Atelier Cloud Computing",
+    description:
+      "Formation pratique sur les fondamentaux du Cloud Computing avec AWS et Azure.",
+    date: "2025-02-15",
+    startTime: "09:00",
+    endTime: "16:00",
+    location: "Cotonou, Bénin",
+    image: "/images/events/cloud-workshop.jpg",
+    category: "Formation",
+    status: "upcoming",
+    isFree: false,
+    price: 25000,
+    maxParticipants: 30,
+    tags: ["Cloud", "AWS", "Azure"],
+  },
+  {
+    id: "3",
+    slug: "meetup-ia-data",
+    title: "Meetup IA & Data Science",
+    description:
+      "Rencontre mensuelle des passionnés d'Intelligence Artificielle et de Data Science.",
+    date: "2025-02-28",
+    startTime: "18:00",
+    endTime: "21:00",
+    location: "Cotonou, Bénin",
+    image: "/images/events/ia-meetup.jpg",
+    category: "Meetup",
+    status: "upcoming",
+    isFree: true,
+    maxParticipants: 50,
+    tags: ["IA", "Data Science", "Networking"],
+  },
+];
