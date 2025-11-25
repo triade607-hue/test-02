@@ -17,7 +17,7 @@ import {
 import { NewsletterBanner } from "@/components/layout";
 
 // Data
-import { events, articles, partners, testimonials } from "@/lib/data";
+import { events, articles, testimonials } from "@/lib/data";
 
 // Static data for missions
 const missions = [
@@ -71,7 +71,7 @@ export default function HomePage() {
       {/* ============================================ */}
       {/* PARTNERS SLIDER */}
       {/* ============================================ */}
-      <PartnersSlider partners={partners} />
+      <PartnersSlider/>
 
       {/* ============================================ */}
       {/* MISSION SECTION */}
