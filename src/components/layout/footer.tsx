@@ -1,173 +1,162 @@
+"use client";
+
 import Link from "next/link";
-import { Facebook, Instagram, Linkedin, Twitter, Mail, Phone, MapPin } from "lucide-react";
-import { SITE_CONFIG, NAV_LINKS } from "@/lib/constants";
+import { Facebook, Instagram, Linkedin, Mail, Phone, MapPin } from "lucide-react";
+
+const quickLinks = [
+  { label: "Accueil", href: "/home" },
+  { label: "À propos", href: "/about" },
+  { label: "Actualités", href: "/news" },
+  { label: "Événements", href: "/events" },
+  { label: "Adhérer", href: "/membership" },
+];
+
+const socialLinks = [
+  { icon: Facebook, href: "https://facebook.com/imo2tun", label: "Facebook" },
+  { icon: Instagram, href: "https://instagram.com/imo2tun", label: "Instagram" },
+  { icon: Linkedin, href: "https://linkedin.com/company/imo2tun", label: "LinkedIn" },
+];
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-primary-900 text-white">
-      {/* Main Footer */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-12 lg:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-          {/* Column 1 - Logo & Description */}
-          <div className="lg:col-span-1">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10">
-                <svg
-                  viewBox="0 0 100 100"
-                  className="w-full h-full"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <circle cx="50" cy="50" r="45" fill="#0077B6" />
-                  <circle cx="50" cy="50" r="20" fill="#F9A825" />
-                  <circle cx="50" cy="50" r="8" fill="#26A69A" />
-                </svg>
-              </div>
-              <span className="text-xl font-bold">
-                <span className="text-white">imo</span>
-                <span className="text-secondary-500">2</span>
-                <span className="text-accent-500">tun</span>
-              </span>
-            </Link>
-            <p className="text-neutral-400 text-sm mb-6">
-              L&apos;expérience d&apos;une connaissance nouvelle au service de la
-              jeunesse africaine. Construisons ensemble l&apos;écosystème
-              numérique africain.
-            </p>
-            {/* Social Links */}
-            <div className="flex items-center gap-3">
-                <a
-                href={SITE_CONFIG.social.facebook}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white hover:text-primary-900 transition-all"
-                aria-label="Facebook"
-              >
-                <Facebook className="w-4 h-4" />
-              </a>
-                <a
-                href={SITE_CONFIG.social.instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white hover:text-primary-900 transition-all"
-                aria-label="Instagram"
-              >
-                <Instagram className="w-4 h-4" />
-              </a>
-                <a
-                href={SITE_CONFIG.social.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white hover:text-primary-900 transition-all"
-                aria-label="LinkedIn"
-              >
-                <Linkedin className="w-4 h-4" />
-              </a>
-                <a
-                href={SITE_CONFIG.social.twitter}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white hover:text-primary-900 transition-all"
-                aria-label="Twitter"
-              >
-                <Twitter className="w-4 h-4" />
-              </a>
-            </div>
-          </div>
+    <footer>
+      {/* Partie supérieure - Bleu */}
+      <div className="bg-[#007DC5]">
+        <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12 py-12 md:py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
+            {/* Logo & Description */}
+            <div className="lg:col-span-1">
+              <p className="text-white/80 text-sm leading-relaxed">
+                L&apos;expérience d&apos;une connaissance nouvelle au service de la jeunesse africaine pour un développement durable.
+              </p>
 
-          {/* Column 2 - Quick Links */}
-          <div>
-            <h4 className="text-white font-semibold mb-4 underline underline-offset-4 decoration-secondary-500">
-              Liens rapides
-            </h4>
-            <ul className="space-y-3">
-              {NAV_LINKS.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-neutral-400 hover:text-white transition-colors text-sm"
+              {/* Réseaux sociaux */}
+              <div className="flex items-center gap-3 mt-6">
+                {socialLinks.map((social) => (
+                  <a
+                    key={social.label}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors duration-300"
+                    aria-label={social.label}
                   >
-                    {link.label}
-                  </Link>
+                    <social.icon className="w-5 h-5" />
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Liens rapides */}
+            <div>
+              <h4 className="text-white font-bold text-lg mb-5 relative">
+                Liens rapides
+                <span className="absolute -bottom-2 left-0 w-10 h-0.5 bg-white" />
+              </h4>
+              <ul className="space-y-3">
+                {quickLinks.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="text-white/80 hover:text-white text-sm transition-colors duration-300 flex items-center gap-2 group"
+                    >
+                      {/* <span className="w-1.5 h-1.5 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity" /> */}
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Contactez-nous */}
+            <div>
+              <h4 className="text-white font-bold text-lg mb-5 relative">
+                Contactez-nous
+                <span className="absolute -bottom-2 left-0 w-10 h-0.5 bg-white" />
+              </h4>
+              <ul className="space-y-4">
+                <li>
+                  <a
+                    href="tel:+33632808316"
+                    className="text-white/80 hover:text-white text-sm transition-colors duration-300 flex items-start gap-3"
+                  >
+                    <Phone className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span>(33) 632808316</span>
+                  </a>
                 </li>
-              ))}
-              <li>
-                <Link
-                  href="/contact"
-                  className="text-neutral-400 hover:text-white transition-colors text-sm"
-                >
-                  Contact
-                </Link>
-              </li>
-            </ul>
-          </div>
+                <li>
+                  <a
+                    href="mailto:info@imo2tun.org"
+                    className="text-white/80 hover:text-white text-sm transition-colors duration-300 flex items-start gap-3"
+                  >
+                    <Mail className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span>info@imo2tun.org</span>
+                  </a>
+                </li>
+                <li>
+                  <div className="text-white/80 text-sm flex items-start gap-3">
+                    <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span>
+                      12 rue Pasteur 60280 Margny-lès-Compiègne
+                      <br />
+                      Oise France
+                    </span>
+                  </div>
+                </li>
+              </ul>
+            </div>
 
-          {/* Column 3 - Contact France */}
-          <div>
-            <h4 className="text-white font-semibold mb-4 underline underline-offset-4 decoration-secondary-500">
-              Contact France
-            </h4>
-            <ul className="space-y-3 text-neutral-400 text-sm">
-              <li className="flex items-start gap-3">
+            {/* Adresse Bénin */}
+            <div>
+              <h4 className="text-white font-bold text-lg mb-5 relative">
+                Notre siège Afrique
+                <span className="absolute -bottom-2 left-0 w-10 h-0.5 bg-white" />
+              </h4>
+              <div className="text-white/80 text-sm flex items-start gap-3">
                 <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span>
-                  {SITE_CONFIG.addresses.france.street}
+                  Lot 2019, Zogbohouè Maison Colonel BOSSOU
                   <br />
-                  {SITE_CONFIG.addresses.france.city}
+                  Emmanuel 071 BP 333, Cotonou Bénin
                 </span>
-              </li>
-              <li className="flex items-center gap-3">
-                <Phone className="w-4 h-4 flex-shrink-0" />
-                <a href={`tel:${SITE_CONFIG.phone.replace(/\s/g, "")}`} className="hover:text-white transition-colors">
-                  {SITE_CONFIG.phone}
-                </a>
-              </li>
-              <li className="flex items-center gap-3">
-                <Mail className="w-4 h-4 flex-shrink-0" />
-                <a href={`mailto:${SITE_CONFIG.email}`} className="hover:text-white transition-colors">
-                  {SITE_CONFIG.email}
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 4 - Contact Bénin */}
-          <div>
-            <h4 className="text-white font-semibold mb-4 underline underline-offset-4 decoration-secondary-500">
-              Contact Bénin
-            </h4>
-            <ul className="space-y-3 text-neutral-400 text-sm">
-              <li className="flex items-start gap-3">
-                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <span>
-                  {SITE_CONFIG.addresses.benin.street}
-                  <br />
-                  {SITE_CONFIG.addresses.benin.city}
-                  <br />
-                  {SITE_CONFIG.addresses.benin.postal}
-                </span>
-              </li>
-            </ul>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Copyright */}
-      <div className="border-t border-neutral-800">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-4 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-neutral-500">
-          <span>Copyright © {currentYear} {SITE_CONFIG.name}. Tous droits réservés.</span>
-          <div className="flex items-center gap-4">
-            <Link href="/legal" className="hover:text-white transition-colors">
-              Mentions légales
-            </Link>
-            <Link href="/privacy" className="hover:text-white transition-colors">
-              Politique de confidentialité
-            </Link>
-            <Link href="/terms" className="hover:text-white transition-colors">
-              CGU
-            </Link>
+      {/* Partie inférieure - Vert/Teal */}
+      <div className="bg-[#26A69A]">
+        <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12 py-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            {/* Copyright */}
+            <p className="text-white/90 text-sm">
+              Copyright © {currentYear} imo2tun.
+            </p>
+
+            {/* Liens légaux */}
+            <div className="flex items-center gap-6">
+              <Link
+                href="/legal/mentions-legales"
+                className="text-white/80 hover:text-white text-sm transition-colors duration-300"
+              >
+                Mentions légales
+              </Link>
+              <Link
+                href="/legal/politique-confidentialite"
+                className="text-white/80 hover:text-white text-sm transition-colors duration-300"
+              >
+                Politique de confidentialité
+              </Link>
+              <Link
+                href="/legal/cgu"
+                className="text-white/80 hover:text-white text-sm transition-colors duration-300"
+              >
+                CGU
+              </Link>
+            </div>
           </div>
         </div>
       </div>

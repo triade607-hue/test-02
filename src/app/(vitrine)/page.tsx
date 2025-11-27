@@ -11,6 +11,7 @@ import {
   ArticleCard,
   PartnersSlider,
   TestimonialsSlider,
+  CtaSection,
   // CtaSection,
 } from "@/components/shared";
 import { NewsletterBanner } from "@/components/layout";
@@ -118,20 +119,10 @@ export default function HomePage() {
       {/* TESTIMONIALS SECTION */}
       <TestimonialsSlider />
 
-      {/* ============================================ */}
       {/* CTA SECTION */}
-      {/* ============================================ */}
-      {/* <CtaSection
-        title="Prêt à rejoindre l'aventure ?"
-        description="Rejoignez notre communauté de passionnés du numérique et participez à la construction de l'écosystème tech africain. Ensemble, formons les talents de demain."
-        buttonText="Devenir Membre Maintenant"
-        buttonLink="/membership"
-        image="/images/cta-image.jpg"
-      /> */}
+      <CtaSection/>
 
-      {/* ============================================ */}
       {/* NEWSLETTER BANNER */}
-      {/* ============================================ */}
       <NewsletterBanner />
     </>
   );

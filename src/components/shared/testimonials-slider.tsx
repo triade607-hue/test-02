@@ -44,7 +44,7 @@ export function TestimonialsSlider() {
   const duplicatedTestimonials = [...testimonials, ...testimonials];
 
   return (
-    <section className="py-16 lg:py-24 bg-white overflow-hidden">
+    <section className="py-18 lg:py-16 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12">
         <SectionTitle
           title="Ils parlent de nous"
