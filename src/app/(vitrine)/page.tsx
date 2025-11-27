@@ -18,14 +18,6 @@ import { NewsletterBanner } from "@/components/layout";
 // Data
 import { events, articles, testimonials, missions } from "@/lib/data";
 
-// Static data for stats
-const stats = [
-  { value: "500+", label: "Membres" },
-  { value: "50+", label: "Experts" },
-  { value: "20+", label: "Formations" },
-  { value: "10+", label: "Partenaires" },
-];
-
 export default function HomePage() {
   // Get upcoming events (max 3)
   const upcomingEvents = events
@@ -69,7 +61,7 @@ export default function HomePage() {
       {/* ============================================ */}
       {/* STATS BANNER */}
       {/* ============================================ */}
-      <StatsBanner stats={stats} />
+      <StatsBanner />
 
       {/* ============================================ */}
       {/* EVENTS SECTION */}
@@ -88,7 +80,6 @@ export default function HomePage() {
                   <EventCard
                     key={event.id}
                     event={event}
-                    variant={index === 0 ? "featured" : "default"}
                     index={index}
                   />
                 ))}

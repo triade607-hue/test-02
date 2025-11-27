@@ -7,24 +7,16 @@ export interface Event {
   slug: string;
   title: string;
   description: string;
-  longDescription?: string;
   date: string;
-  startTime: string;
-  endTime: string;
+  time?: string;
   location: string;
-  address?: string;
   image: string;
   category: string;
   status: "upcoming" | "past";
-  isFree: boolean;
   price?: number;
-  maxParticipants?: number;
+  capacity?: number;
   registeredCount?: number;
-  speakers?: Speaker[];
-  schedule?: ScheduleItem[];
-  tags?: string[];
 }
-
 export interface Speaker {
   id: string;
   name: string;

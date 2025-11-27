@@ -42,7 +42,7 @@ export function MissionCard({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        "rounded-md p-8 border-2 transition-all duration-300 text-center",
+        "rounded-md p-8 border-2 transition-all duration-100 text-center",
         isHovered
           ? "bg-[#007DC5] border-[#007DC5] shadow-sm scale-102"
           : "bg-white border-[#007DC5] shadow-sm hover:shadow-md"
@@ -68,7 +68,7 @@ export function MissionCard({
       {/* Title */}
       <h3
         className={cn(
-          "text-lg font-semibold mb-2 transition-colors duration-500",
+          "text-lg font-semibold mb-2 transition-colors duration-100",
           isHovered ? "text-white" : "text-neutral-900"
         )}
       >
@@ -88,7 +88,7 @@ export function MissionCard({
       {/* Description */}
       <p
         className={cn(
-          "text-[15px] leading-relaxed mb-6 transition-colors duration-300",
+          "text-[15px] leading-relaxed mb-6 transition-colors duration-100",
           isHovered ? "text-white" : "text-neutral-600"
         )}
       >
