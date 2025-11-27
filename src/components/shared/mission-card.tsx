@@ -42,20 +42,34 @@ export function MissionCard({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        "rounded-md p-8 border-2 transition-all duration-100 text-center",
+        "relative rounded-md p-8 border-2 transition-all duration-300 text-center overflow-hidden",
         isHovered
-          ? "bg-[#007DC5] border-[#007DC5] shadow-sm scale-102"
+          ? "bg-[#007DC5] border-[#007DC5] shadow-md"
           : "bg-white border-[#007DC5] shadow-sm hover:shadow-md"
       )}
     >
+      {/* Effet de brillance en boucle infinie */}
+      {isHovered && (
+        <motion.div
+          initial={{ x: "-100%" }}
+          animate={{ x: "300%" }}
+          transition={{
+            duration: 1.2,
+            repeat: Infinity,
+            ease: "linear",
+            repeatDelay: 0.5,
+          }}
+          className="absolute inset-0 w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12 pointer-events-none z-20"
+        />
+      )}
+
       {/* Icon */}
       <motion.div
         animate={{
           backgroundColor: isHovered ? "#FFFFFF" : "#007DC5",
-          scale: isHovered ? 1 : 1,
         }}
         transition={{ duration: 0.3 }}
-        className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"
+        className="relative z-10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"
       >
         <Icon
           className={cn(
@@ -68,7 +82,7 @@ export function MissionCard({
       {/* Title */}
       <h3
         className={cn(
-          "text-lg font-semibold mb-2 transition-colors duration-100",
+          "relative z-10 text-lg font-semibold mb-2 transition-colors duration-300",
           isHovered ? "text-white" : "text-neutral-900"
         )}
       >
@@ -82,13 +96,13 @@ export function MissionCard({
           width: isHovered ? "60px" : "40px",
         }}
         transition={{ duration: 0.3 }}
-        className="h-[3px] rounded-full mx-auto mb-4"
+        className="relative z-10 h-[3px] rounded-full mx-auto mb-4"
       />
 
       {/* Description */}
       <p
         className={cn(
-          "text-[15px] leading-relaxed mb-6 transition-colors duration-100",
+          "relative z-10 text-[15px] leading-relaxed mb-6 transition-colors duration-300",
           isHovered ? "text-white" : "text-neutral-600"
         )}
       >
@@ -97,15 +111,15 @@ export function MissionCard({
 
       {/* Link/Button */}
       {link && (
-        <Link href={link}>
+        <Link href={link} className="relative z-10">
           <motion.button
             animate={{
               backgroundColor: isHovered ? "#FFFFFF" : "transparent",
               color: isHovered ? "#007DC5" : "#000000",
               borderColor: isHovered ? "#FFFFFF" : "#F9A825",
             }}
-            transition={{ duration: 0.1 }}
-            className="border-2 font-semibold px-6 py-2.5 rounded-md transition-all duration-100 inline-flex items-center gap-2"
+            transition={{ duration: 0.3 }}
+            className="border-2 font-semibold px-6 py-2.5 rounded-md transition-all duration-300 inline-flex items-center gap-2"
           >
             {linkText}
             <ArrowRight className="w-4 h-4" />
