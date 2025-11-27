@@ -29,7 +29,7 @@ export function NewsletterBanner() {
   return (
     <section className="relative py-16 md:py-20 bg-white overflow-hidden">
       {/* Forme décorative gauche - Hidden on mobile */}
-      <div className="hidden md:block absolute left-0 top-0 bottom-0 w-1/3 pointer-events-none">
+      {/* <div className="hidden md:block absolute left-0 top-0 bottom-0 w-1/3 pointer-events-none">
         <svg
           viewBox="0 0 400 400"
           fill="none"
@@ -47,10 +47,10 @@ export function NewsletterBanner() {
           />
           <circle cx="200" cy="200" r="100" stroke="#007DC5" strokeWidth="2" />
         </svg>
-      </div>
+      </div> */}
 
       {/* Forme décorative droite - Hidden on mobile */}
-      <div className="hidden md:block absolute right-0 top-0 bottom-0 w-1/3 pointer-events-none">
+      {/* <div className="hidden md:block absolute right-0 top-0 bottom-0 w-1/3 pointer-events-none">
         <svg
           viewBox="0 0 400 400"
           fill="none"
@@ -68,10 +68,10 @@ export function NewsletterBanner() {
           />
           <circle cx="200" cy="200" r="100" stroke="#007DC5" strokeWidth="2" />
         </svg>
-      </div>
+      </div> */}
 
       {/* Points décoratifs - Hidden on mobile */}
-      <div className="hidden lg:grid absolute top-8 left-1/4 grid-cols-4 gap-2 opacity-20">
+      {/* <div className="hidden lg:grid absolute top-8 left-1/4 grid-cols-4 gap-2 opacity-20">
         {[...Array(16)].map((_, i) => (
           <div key={i} className="w-2 h-2 bg-[#007DC5] rounded-full" />
         ))}
@@ -80,7 +80,7 @@ export function NewsletterBanner() {
         {[...Array(16)].map((_, i) => (
           <div key={i} className="w-2 h-2 bg-[#007DC5] rounded-full" />
         ))}
-      </div>
+      </div> */}
 
       {/* Contenu */}
       <div className="relative z-10 max-w-4xl mx-auto px-6 md:px-8 lg:px-12">
@@ -125,7 +125,7 @@ export function NewsletterBanner() {
                   setFormData({ ...formData, name: e.target.value })
                 }
                 required
-                className="w-full md:w-56 px-5 py-3 rounded-md bg-white border-2 border-[#007DC5] text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#007DC5]/20 transition-all"
+                className="w-full md:w-75 px-5 py-3 rounded-md bg-white border-2 border-[#007DC5] text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#007DC5]/20 transition-all"
               />
 
               {/* Input Email */}
@@ -137,7 +137,7 @@ export function NewsletterBanner() {
                   setFormData({ ...formData, email: e.target.value })
                 }
                 required
-                className="w-full md:w-56 px-5 py-3 rounded-md bg-white border-2 border-[#007DC5] text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#007DC5]/20 transition-all"
+                className="w-full md:w-75 px-5 py-3 rounded-md bg-white border-2 border-[#007DC5] text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#007DC5]/20 transition-all"
               />
 
               {/* Bouton */}
