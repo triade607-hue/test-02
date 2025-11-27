@@ -9,14 +9,14 @@ import {
   StatsBanner,
   EventCard,
   ArticleCard,
-  TestimonialCard,
   PartnersSlider,
+  TestimonialsSlider,
   // CtaSection,
 } from "@/components/shared";
 import { NewsletterBanner } from "@/components/layout";
 
 // Data
-import { events, articles, testimonials, missions } from "@/lib/data";
+import { events, articles, missions } from "@/lib/data";
 
 export default function HomePage() {
   // Get upcoming events (max 3)
@@ -58,14 +58,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ============================================ */}
       {/* STATS BANNER */}
-      {/* ============================================ */}
       <StatsBanner />
 
-      {/* ============================================ */}
       {/* EVENTS SECTION */}
-      {/* ============================================ */}
       <section className="py-16 lg:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
           <SectionTitle
@@ -77,11 +73,7 @@ export default function HomePage() {
             <>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {upcomingEvents.map((event, index) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    index={index}
-                  />
+                  <EventCard key={event.id} event={event} index={index} />
                 ))}
               </div>
 
@@ -101,9 +93,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ============================================ */}
       {/* ARTICLES SECTION */}
-      {/* ============================================ */}
       <section className="py-16 lg:py-24 bg-neutral-50">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
           <SectionTitle
@@ -125,27 +115,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ============================================ */}
       {/* TESTIMONIALS SECTION */}
-      {/* ============================================ */}
-      <section className="py-16 lg:py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-          <SectionTitle
-            title="Ils parlent de nous"
-            subtitle="Découvrez les témoignages de nos membres et partenaires."
-          />
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <TestimonialCard
-                key={testimonial.id}
-                testimonial={testimonial}
-                index={index}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
+      <TestimonialsSlider />
 
       {/* ============================================ */}
       {/* CTA SECTION */}

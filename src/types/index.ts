@@ -41,19 +41,19 @@ export interface Article {
   slug: string;
   title: string;
   excerpt: string;
-  content?: string;
+  content: string;
   image: string;
   category: string;
   author: Author;
   publishedAt: string;
   readTime: number;
-  tags?: string[];
+  tags: string[];
 }
 
 export interface Author {
   name: string;
-  avatar?: string;
-  role?: string;
+  avatar: string;
+  role: string;
 }
 
 export interface Partner {
@@ -69,8 +69,8 @@ export interface Testimonial {
   content: string;
   author: string;
   role: string;
-  company?: string;
-  avatar?: string;
+  company: string;
+  avatar: string;
   rating: number;
 }
 

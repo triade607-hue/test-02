@@ -7,3 +7,4 @@ export * from "./testimonial-card";
 export * from "./partners-slider";
 export * from "./cta-section";
 export * from "./hero-home";
+export * from "./testimonials-slider";

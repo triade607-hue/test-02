@@ -1,11 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
+import { Calendar, Clock, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Calendar, User, ArrowRight } from "lucide-react";
-import { formatDate } from "@/lib/utils";
-import { Badge } from "@/components/ui";
 import { Article } from "@/types";
 
 interface ArticleCardProps {
@@ -14,60 +13,165 @@ interface ArticleCardProps {
 }
 
 export function ArticleCard({ article, index = 0 }: ArticleCardProps) {
+  const [isHovered, setIsHovered] = useState(false);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("fr-FR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
-      className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className="group relative bg-white rounded-md overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-500"
     >
-      {/* Image */}
-      <Link href={`/news/${article.slug}`} className="block relative h-48">
-        <Image
-          src={article.image}
-          alt={article.title}
-          fill
-          className="object-cover group-hover:scale-105 transition-transform duration-500"
+      {/* Image container */}
+      <div className="relative h-62 overflow-hidden">
+        <motion.div
+          animate={{ scale: isHovered ? 1.1 : 1 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="absolute inset-0"
+        >
+          <Image
+            src={article.image}
+            alt={article.title}
+            fill
+            className="object-cover"
+          />
+        </motion.div>
+
+        {/* Overlay gradient */}
+        <motion.div
+          animate={{ opacity: isHovered ? 0.4 : 0 }}
+          transition={{ duration: 0.3 }}
+          className="absolute inset-0 bg-[#007DC5]"
         />
-        <Badge className="absolute top-3 left-3">{article.category}</Badge>
-      </Link>
+
+        {/* Effet de brillance */}
+        {isHovered && (
+          <motion.div
+            initial={{ x: "-100%" }}
+            animate={{ x: "300%" }}
+            transition={{
+              duration: 1,
+              repeat: Infinity,
+              ease: "linear",
+              repeatDelay: 0.8,
+            }}
+            className="absolute inset-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12 pointer-events-none"
+          />
+        )}
+
+        {/* Badge catégorie */}
+        <motion.div
+          animate={{ y: isHovered ? 0 : 0, scale: isHovered ? 1.05 : 1 }}
+          className="absolute top-4 right-4 z-10"
+        >
+          <span className="px-4 py-1.5 bg-[#007DC5] text-white text-xs font-bold rounded-full shadow-lg">
+            {article.category}
+          </span>
+        </motion.div>
+
+        {/* Temps de lecture - apparaît au hover */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: isHovered ? 1 : 0, y: isHovered ? 0 : 10 }}
+          transition={{ duration: 0.3 }}
+          className="absolute bottom-4 left-4 z-10"
+        >
+          <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-sm text-neutral-700 text-xs font-medium rounded-full">
+            <Clock className="w-3.5 h-3.5" />
+            {article.readTime} min de lecture
+          </span>
+        </motion.div>
+      </div>
 
       {/* Content */}
-      <div className="p-5">
+      <div className="p-6">
+        {/* Titre */}
         <Link href={`/news/${article.slug}`}>
-          <h3 className="text-lg font-semibold text-neutral-900 mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors">
+          <motion.h3
+            animate={{ color: isHovered ? "#007DC5" : "#171717" }}
+            transition={{ duration: 0.3 }}
+            className="text-lg font-bold mb-3 line-clamp-2 cursor-pointer"
+          >
             {article.title}
-          </h3>
+          </motion.h3>
         </Link>
 
-        <p className="text-neutral-600 text-sm mb-4 line-clamp-3">
+        {/* Ligne sous le titre */}
+        <motion.div
+          animate={{
+            width: isHovered ? "60px" : "40px",
+            backgroundColor: isHovered ? "#007DC5" : "#F9A825",
+          }}
+          transition={{ duration: 0.4 }}
+          className="h-[3px] rounded-full mb-4"
+        />
+
+        {/* Excerpt */}
+        <p className="text-neutral-600 text-sm leading-relaxed mb-5 line-clamp-2">
           {article.excerpt}
         </p>
 
-        {/* Meta */}
-        <div className="flex items-center justify-between text-sm text-neutral-500">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1">
-              <User className="w-4 h-4" />
-              <span>{article.author.name}</span>
+        {/* Author & Date */}
+        <div className="flex items-center justify-between mb-5 pb-5 border-b border-neutral-100">
+          <div className="flex items-center gap-3">
+            <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-white shadow-md">
+              <Image
+                src={article.author.avatar}
+                alt={article.author.name}
+                fill
+                className="object-cover"
+              />
             </div>
-            <div className="flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
-              <span>{formatDate(article.publishedAt)}</span>
+            <div>
+              <p className="text-sm font-semibold text-neutral-800">
+                {article.author.name}
+              </p>
+              <p className="text-xs text-neutral-500">{article.author.role}</p>
             </div>
+          </div>
+          <div className="flex items-center gap-1.5 text-neutral-500 text-xs">
+            <Calendar className="w-3.5 h-3.5" />
+            <span>{formatDate(article.publishedAt)}</span>
           </div>
         </div>
 
-        {/* Read more */}
-        <Link
-          href={`/news/${article.slug}`}
-          className="mt-4 inline-flex items-center gap-2 text-primary-600 font-medium hover:text-primary-700 transition-colors group/link"
-        >
-          Lire plus
-          <ArrowRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
+        {/* Lien Lire la suite */}
+        <Link href={`/news/${article.slug}`}>
+          <motion.div
+            animate={{ x: isHovered ? 5 : 0 }}
+            transition={{ duration: 0.3 }}
+            className="inline-flex items-center gap-2 text-[#F9A825] font-semibold text-sm group/link cursor-pointer"
+          >
+            <span>Lire la suite</span>
+            <motion.div
+              animate={{ x: isHovered ? 5 : 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              <ArrowRight className="w-4 h-4" />
+            </motion.div>
+          </motion.div>
         </Link>
       </div>
+
+      {/* Bordure animée en bas */}
+      {/* <motion.div
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: isHovered ? 1 : 0 }}
+        transition={{ duration: 0.5 }}
+        className="absolute bottom-0 left-0 right-0 h-1 bg-[#007DC5] origin-left"
+      /> */}
     </motion.article>
   );
 }
