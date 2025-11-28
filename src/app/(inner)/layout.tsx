@@ -1,5 +1,6 @@
 import { HeaderSecondary } from "@/components/layout/header-secondary";
 import { Footer } from "@/components/layout/footer";
+import { NewsletterBanner } from "@/components/layout";
 
 export default function InnerLayout({
   children,
@@ -10,6 +11,7 @@ export default function InnerLayout({
     <>
       <HeaderSecondary />
       <main>{children}</main>
+      <NewsletterBanner />
       <Footer />
     </>
   );
