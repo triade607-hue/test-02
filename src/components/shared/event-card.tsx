@@ -111,7 +111,7 @@ export function EventCard({ event, index = 0 }: EventCardProps) {
             "px-4 py-1.5 rounded-full text-xs font-bold backdrop-blur-md transition-colors duration-500",
             event.status === "upcoming"
               ? "bg-white/20 text-white border border-white/40"
-              : "bg-black/30 text-white/80 border border-white/20"
+              : "bg-white/20 text-white border border-white/40"
           )}
         >
           {event.status === "upcoming" ? "À venir" : "Passé"}
