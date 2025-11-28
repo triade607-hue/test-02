@@ -136,7 +136,7 @@ export function EventRegistrationModal({
                 {isHovered && (
                   <motion.div
                     initial={{ x: "-100%", opacity: 0 }}
-                    animate={{ x: "200%", opacity: 1 }}
+                    animate={{ x: "300%", opacity: 1 }}
                     exit={{ x: "200%", opacity: 0 }}
                     transition={{ duration: 0.8 }}
                     className="absolute inset-0 w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12 pointer-events-none z-10"

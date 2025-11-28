@@ -280,7 +280,7 @@ export function EventCard({ event, index = 0 }: EventCardProps) {
         <motion.div
           initial={{ x: "-100%", opacity: 0 }}
           animate={{
-            x: isHovered ? "200%" : "-100%",
+            x: isHovered ? "300%" : "-100%",
             opacity: isHovered ? 1 : 0,
           }}
           transition={{ duration: 0.8, delay: 0.1 }}
