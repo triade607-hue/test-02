@@ -14,12 +14,12 @@ import {
   Share2,
   CalendarPlus,
   ChevronDown,
-  // Check,
 } from "lucide-react";
 
 // Components
 import { HeroSecondary } from "@/components/shared/hero-secondary";
 import { EventCard } from "@/components/shared/event-card";
+import { EventRegistrationModal } from "@/components/shared/event-registration-modal";
 import { Button } from "@/components/ui";
 
 // Data
@@ -125,25 +125,6 @@ const DEMO_SCHEDULE: ScheduleItem[] = [
   },
 ];
 
-// const DEMO_PRACTICAL_INFO = [
-//   {
-//     id: "1",
-//     question: "Comment venir ?",
-//     answer:
-//       "Answer to the question goes here and it will break lines when it hits its maximum fixed width.",
-//   },
-//   {
-//     id: "2",
-//     question: "Parking",
-//     answer: "Parking gratuit disponible sur place.",
-//   },
-//   {
-//     id: "3",
-//     question: "Contact organisateur",
-//     answer: "events@imo2tun.org - +33 6 32 80 83 16",
-//   },
-// ];
-
 // ============================================
 // PAGE COMPONENT
 // ============================================
@@ -155,6 +136,7 @@ export default function EventDetailPage({
 }) {
   const { slug } = use(params);
   const [openScheduleId, setOpenScheduleId] = useState<string | null>("2");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Trouver l'événement par slug
   const event = events.find((e) => e.slug === slug);
@@ -279,7 +261,11 @@ export default function EventDetailPage({
                 <div className="border-neutral-200 pt-5 mt-2">
                   {/* Bouton S'inscrire */}
                   {event.status === "upcoming" && (
-                    <Button variant="primary" className="w-full mb-3">
+                    <Button
+                      variant="primary"
+                      className="w-full mb-3"
+                      onClick={() => setIsModalOpen(true)}
+                    >
                       S&apos;inscrire
                     </Button>
                   )}
@@ -341,7 +327,7 @@ export default function EventDetailPage({
                             openScheduleId === item.id ? null : item.id
                           )
                         }
-                        className="w-full flex items-center justify-between px-5 py-4 text-left "
+                        className="w-full flex items-center justify-between px-5 py-4 text-left"
                       >
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-2 text-sm text-neutral-500">
@@ -456,32 +442,6 @@ export default function EventDetailPage({
                   ))}
                 </div>
               </section>
-
-              {/* Informations pratiques - Sans carte, directement sur la page */}
-              {/* <section className="mb-12">
-                <div className="flex items-center gap-3 mb-6">
-                  <h2 className="text-xl md:text-2xl font-bold text-neutral-900">
-                    Informations pratiques
-                  </h2>
-                </div>
-                <div className="space-y-5">
-                  {DEMO_PRACTICAL_INFO.map((info) => (
-                    <div key={info.id} className="flex items-start gap-3">
-                      <div className="w-5 h-5 bg-accent-500 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Check className="w-4 h-4 text-white" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-neutral-900 mb-1">
-                          {info.question}
-                        </h4>
-                        <p className="text-sm text-neutral-600 leading-relaxed">
-                          {info.answer}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section> */}
             </div>
           </div>
 
@@ -501,6 +461,13 @@ export default function EventDetailPage({
           )}
         </div>
       </main>
+
+      {/* Modal d'inscription */}
+      <EventRegistrationModal
+        event={event}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </>
   );
 }

@@ -8,3 +8,4 @@ export * from "./partners-slider";
 export * from "./cta-section";
 export * from "./hero-home";
 export * from "./testimonials-slider";
+export * from "./event-registration-modal";
