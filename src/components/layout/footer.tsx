@@ -29,7 +29,9 @@ export function Footer() {
             {/* Logo & Description */}
             <div className="lg:col-span-1">
               <p className="text-white/80 text-sm leading-relaxed">
-                L&apos;expérience d&apos;une connaissance nouvelle au service de la jeunesse africaine pour un développement durable.
+                <span className="text-white font-semibold">Imo2tun</span>{" "}
+                c&apos;est l&apos;expérience d&apos;une connaissance nouvelle au
+                service de la jeunesse africaine pour un développement durable.
               </p>
 
               {/* Réseaux sociaux */}
