@@ -130,7 +130,7 @@ export function Footer() {
       </div>
 
       {/* Partie inférieure - Vert/Teal */}
-      <div className="bg-[#26A69A]">
+      <div className="bg-primary-600">
         <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12 py-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Copyright */}

@@ -39,7 +39,8 @@ export function HeroHome() {
                 <Button
                   variant="secondary"
                   size="md"
-                  className="rounded-md px-8"
+                  className="rounded-md px-8 focus:outline-none focus:ring-0 focus:ring-offset-0 active:outline-none active:ring-0
+"
                 >
                   Devenir Membre
                 </Button>
@@ -48,7 +49,8 @@ export function HeroHome() {
                 <Button
                   variant="outline"
                   size="md"
-                  className="rounded-md px-8 border-[#F9A825] text-black hover:bg-[#F9A825] hover:text-white"
+                  className="rounded-md px-8 border-[#F9A825] text-black hover:bg-[#F9A825] hover:text-white focus:outline-none focus:ring-0 focus:ring-offset-0 active:outline-none active:ring-0
+"
                 >
                   Découvrir nos programmes
                 </Button>

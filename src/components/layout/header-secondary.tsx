@@ -73,7 +73,7 @@ export function HeaderSecondary() {
                           : "text-neutral-900 font-semibold hover:text-[#F9A825]"
                         : // État transparent (fond image)
                           isActive(link.href)
-                          ? "text-[#F9A825] font-semibold"
+                          ? "text-white font-semibold"
                           : "text-white font-semibold hover:text-white/80"
                     )}
                   >
@@ -89,7 +89,7 @@ export function HeaderSecondary() {
                 <Button
                   variant={isScrolled ? "primary" : "primary"}
                   className={cn(
-                    "rounded-md transition-all duration-300",
+                    "rounded-md transition-all duration-300 focus:outline-none focus:ring-0 focus:ring-offset-0 active:outline-none active:ring-0",
                     !isScrolled && "bg-secondary-500 hover:bg-secondary-600"
                   )}
                   size="md"

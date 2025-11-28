@@ -119,7 +119,7 @@ export function NewsletterBanner() {
               {/* Input Nom */}
               <input
                 type="text"
-                placeholder="Votre Nom"
+                placeholder="Votre nom"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
@@ -131,7 +131,7 @@ export function NewsletterBanner() {
               {/* Input Email */}
               <input
                 type="email"
-                placeholder="Votre E-mail"
+                placeholder="Votre e-mail"
                 value={formData.email}
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })

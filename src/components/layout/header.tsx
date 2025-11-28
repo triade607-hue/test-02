@@ -79,7 +79,12 @@ export function Header() {
               </nav>
 
               <Link href="/contact">
-                <Button variant="primary" className="rounded-md" size="md">
+                <Button
+                  variant="primary"
+                  className="rounded-md focus:outline-none focus:ring-0 focus:ring-offset-0 active:outline-none active:ring-0
+"
+                  size="md"
+                >
                   Contactez-nous
                 </Button>
               </Link>

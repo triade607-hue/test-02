@@ -70,7 +70,11 @@ export function CtaSection({
             </p>
 
             <Link href={buttonLink}>
-              <Button variant="primary" size="lg" className="rounded-md px-8">
+              <Button
+                variant="primary"
+                size="lg"
+                className="rounded-md px-8 focus:outline-none focus:ring-0 focus:ring-offset-0 active:outline-none active:ring-0"
+              >
                 {buttonText}
               </Button>
             </Link>
