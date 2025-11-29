@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  imo2tun-frontend-staging:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: $IMAGE_TAG
+    container_name: imo2tun-frontend-staging
+    ports:
+      - "3005:3000"
+    environment:
+      - NODE_ENV=staging
+    restart: unless-stopped
+    networks:
+      - imo2tun-network-staging
+
+networks:
+  imo2tun-network-staging:
+    driver: bridge
