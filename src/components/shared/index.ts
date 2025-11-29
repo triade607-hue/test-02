@@ -9,3 +9,6 @@ export * from "./cta-section";
 export * from "./hero-home";
 export * from "./testimonials-slider";
 export * from "./event-registration-modal";
+export * from "./value-card";
+export * from "./team-member-card";
+export * from "./team-slider";

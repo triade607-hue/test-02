@@ -97,3 +97,24 @@ export interface FAQ {
   question: string;
   answer: string;
 }
+
+export interface Value {
+  id: string;
+  icon: string;
+  title: string;
+  description: string;
+  variant: "primary" | "secondary" | "accent" | "outline";
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  description: string;
+  avatar: string;
+  socials: {
+    facebook?: string;
+    instagram?: string;
+    linkedin?: string;
+  };
+}

@@ -4,3 +4,5 @@ export * from "./partners";
 export * from "./testimonials";
 export * from "./missions";
 export * from "./stats";
+export * from "./values";
+export * from "./team";
