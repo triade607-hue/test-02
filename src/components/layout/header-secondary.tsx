@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { NAV_LINKS } from "@/lib/constants";
 import { Button } from "@/components/ui";
+import { UserMenu } from "./user-menu";
 
 export function HeaderSecondary() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -57,8 +58,8 @@ export function HeaderSecondary() {
               />
             </Link>
 
-            {/* Navigation + CTA - Right (Desktop) */}
-            <div className="hidden lg:flex items-center gap-8">
+            {/* Navigation + CTAs - Right (Desktop) */}
+            <div className="hidden lg:flex items-center gap-6">
               <nav className="flex items-center gap-8">
                 {NAV_LINKS.map((link) => (
                   <Link
@@ -85,6 +86,18 @@ export function HeaderSecondary() {
                 ))}
               </nav>
 
+              {/* Divider vertical */}
+              <div
+                className={cn(
+                  "h-8 w-px transition-colors duration-300",
+                  isScrolled ? "bg-neutral-200" : "bg-white/30"
+                )}
+              />
+
+              {/* User Menu - Adapte son variant selon l'état scroll */}
+              <UserMenu variant={isScrolled ? "light" : "dark"} />
+
+              {/* Bouton Contact */}
               <Link href="/contact">
                 <Button
                   variant={isScrolled ? "primary" : "primary"}
@@ -139,7 +152,7 @@ export function HeaderSecondary() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "tween", duration: 0.3 }}
-              className="fixed top-0 right-0 h-full w-[280px] bg-white shadow-xl z-50 lg:hidden flex flex-col"
+              className="fixed top-0 right-0 h-full w-[300px] bg-white shadow-xl z-50 lg:hidden flex flex-col"
             >
               {/* Sidebar Header */}
               <div className="flex items-center justify-between p-6 border-b border-neutral-100">
@@ -162,7 +175,7 @@ export function HeaderSecondary() {
               </div>
 
               {/* Sidebar Navigation */}
-              <nav className="flex-1 py-6 px-6">
+              <nav className="flex-1 py-6 px-6 overflow-y-auto">
                 <div className="flex flex-col gap-2">
                   {NAV_LINKS.map((link) => (
                     <Link
@@ -182,6 +195,38 @@ export function HeaderSecondary() {
                       )}
                     </Link>
                   ))}
+
+                  {/* Liens Auth */}
+                  <Link
+                    href="/login"
+                    onClick={closeMobileMenu}
+                    className={cn(
+                      "relative text-[15px] py-3 transition-colors",
+                      isActive("/login")
+                        ? "text-[#F9A825] font-semibold"
+                        : "text-neutral-900 font-semibold hover:text-[#F9A825]"
+                    )}
+                  >
+                    Se connecter
+                    {isActive("/login") && (
+                      <span className="absolute bottom-2 left-0 w-8 h-[2px] bg-[#F9A825] rounded-full" />
+                    )}
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={closeMobileMenu}
+                    className={cn(
+                      "relative text-[15px] py-3 transition-colors",
+                      isActive("/register")
+                        ? "text-[#F9A825] font-semibold"
+                        : "text-neutral-900 font-semibold hover:text-[#F9A825]"
+                    )}
+                  >
+                    S&apos;inscrire
+                    {isActive("/register") && (
+                      <span className="absolute bottom-2 left-0 w-8 h-[2px] bg-[#F9A825] rounded-full" />
+                    )}
+                  </Link>
                 </div>
               </nav>
 

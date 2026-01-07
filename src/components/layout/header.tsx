@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { NAV_LINKS } from "@/lib/constants";
 import { Button } from "@/components/ui";
+import { UserMenu } from "./user-menu";
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -56,8 +57,8 @@ export function Header() {
               />
             </Link>
 
-            {/* Navigation + CTA - Right (Desktop) */}
-            <div className="hidden lg:flex items-center gap-8">
+            {/* Navigation + CTAs - Right (Desktop) */}
+            <div className="hidden lg:flex items-center gap-6">
               <nav className="flex items-center gap-8">
                 {NAV_LINKS.map((link) => (
                   <Link
@@ -78,11 +79,17 @@ export function Header() {
                 ))}
               </nav>
 
+              {/* Divider vertical */}
+              <div className="h-8 w-px bg-neutral-200" />
+
+              {/* User Menu - Nouveau CTA innovant */}
+              <UserMenu variant="light" />
+
+              {/* Bouton Contact */}
               <Link href="/contact">
                 <Button
                   variant="primary"
-                  className="rounded-md focus:outline-none focus:ring-0 focus:ring-offset-0 active:outline-none active:ring-0
-"
+                  className="rounded-md focus:outline-none focus:ring-0 focus:ring-offset-0 active:outline-none active:ring-0"
                   size="md"
                 >
                   Contactez-nous
@@ -122,7 +129,7 @@ export function Header() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "tween", duration: 0.3 }}
-              className="fixed top-0 right-0 h-full w-[280px] bg-white shadow-xl z-50 lg:hidden flex flex-col"
+              className="fixed top-0 right-0 h-full w-[300px] bg-white shadow-xl z-50 lg:hidden flex flex-col"
             >
               {/* Sidebar Header */}
               <div className="flex items-center justify-between p-6 border-b border-neutral-100">
@@ -145,7 +152,7 @@ export function Header() {
               </div>
 
               {/* Sidebar Navigation */}
-              <nav className="flex-1 py-6 px-6">
+              <nav className="flex-1 py-6 px-6 overflow-y-auto">
                 <div className="flex flex-col gap-2">
                   {NAV_LINKS.map((link) => (
                     <Link
@@ -165,6 +172,38 @@ export function Header() {
                       )}
                     </Link>
                   ))}
+
+                  {/* Liens Auth */}
+                  <Link
+                    href="/login"
+                    onClick={closeMobileMenu}
+                    className={cn(
+                      "relative text-[15px] py-3 transition-colors",
+                      isActive("/login")
+                        ? "text-[#F9A825] font-semibold"
+                        : "text-neutral-900 font-semibold hover:text-[#F9A825]"
+                    )}
+                  >
+                    Se connecter
+                    {isActive("/login") && (
+                      <span className="absolute bottom-2 left-0 w-8 h-[2px] bg-[#F9A825] rounded-full" />
+                    )}
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={closeMobileMenu}
+                    className={cn(
+                      "relative text-[15px] py-3 transition-colors",
+                      isActive("/register")
+                        ? "text-[#F9A825] font-semibold"
+                        : "text-neutral-900 font-semibold hover:text-[#F9A825]"
+                    )}
+                  >
+                    S&apos;inscrire
+                    {isActive("/register") && (
+                      <span className="absolute bottom-2 left-0 w-8 h-[2px] bg-[#F9A825] rounded-full" />
+                    )}
+                  </Link>
                 </div>
               </nav>
 
