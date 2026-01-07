@@ -420,10 +420,10 @@ export default function MembresPage() {
                 transition={{ duration: 0.3, delay: index * 0.05 }}
                 className="bg-white rounded-md border border-neutral-100 overflow-hidden hover:shadow-lg transition-shadow group"
               >
-                {/* Header with image/logo */}
-                <div className="relative h-32 bg-gradient-to-br from-neutral-100 to-neutral-50 flex items-center justify-center">
+                {/* Logo Section - Bien visible */}
+                <div className="h-32 bg-neutral-50 flex items-center justify-center p-4">
                   {member.type === "Contributeur" && member.avatar ? (
-                    <div className="relative w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg">
+                    <div className="relative w-20 h-20 rounded-full overflow-hidden border-3 border-white shadow-lg">
                       <Image
                         src={member.avatar}
                         alt={member.name}
@@ -432,7 +432,7 @@ export default function MembresPage() {
                       />
                     </div>
                   ) : member.logo ? (
-                    <div className="relative w-24 h-16">
+                    <div className="relative w-32 h-20">
                       <Image
                         src={member.logo}
                         alt={member.name}
@@ -442,102 +442,68 @@ export default function MembresPage() {
                     </div>
                   ) : (
                     <div
-                      className="w-16 h-16 rounded-md flex items-center justify-center"
+                      className="w-20 h-20 rounded-md flex items-center justify-center"
                       style={{
                         backgroundColor: `${TYPE_COLORS[member.type]}15`,
                       }}
                     >
                       <Building2
-                        className="w-8 h-8"
+                        className="w-10 h-10"
                         style={{ color: TYPE_COLORS[member.type] }}
                       />
                     </div>
                   )}
+                </div>
 
-                  {/* Badges */}
-                  <div className="absolute top-3 left-3 flex items-center gap-2">
+                {/* Content - Aligné à gauche */}
+                <div className="p-4">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <h3 className="font-semibold text-neutral-900 group-hover:text-primary-600 transition-colors line-clamp-1">
+                      {member.name}
+                    </h3>
                     <span
-                      className="px-2 py-0.5 text-xs font-medium rounded-md text-white"
+                      className="flex-shrink-0 px-2 py-0.5 text-[10px] font-semibold rounded-sm text-white"
                       style={{ backgroundColor: TYPE_COLORS[member.type] }}
                     >
                       {member.type}
                     </span>
                   </div>
-                  <div className="absolute top-3 right-3">
-                    <span
-                      className="px-2 py-0.5 text-xs font-semibold rounded-md text-white"
-                      style={{ backgroundColor: TIER_COLORS[member.tier] }}
-                    >
-                      {member.tier}
-                    </span>
-                  </div>
-                </div>
 
-                {/* Content */}
-                <div className="p-5">
-                  <h3 className="font-semibold text-neutral-900 mb-1 group-hover:text-primary-600 transition-colors">
-                    {member.name}
-                  </h3>
-
-                  <div className="flex items-center gap-1 text-sm text-neutral-500 mb-3">
-                    <MapPin className="w-4 h-4" />
+                  <div className="flex items-center gap-1 text-xs text-neutral-500 mb-2">
+                    <MapPin className="w-3 h-3" />
                     <span>{member.location}</span>
                   </div>
 
-                  <p className="text-sm text-neutral-600 line-clamp-2 mb-4">
+                  <p className="text-xs text-neutral-600 line-clamp-2 mb-3">
                     {member.description}
                   </p>
 
-                  {/* Sector or Expertise */}
-                  {member.sector && (
-                    <div className="mb-4">
-                      <span className="inline-block px-2 py-1 bg-neutral-100 text-neutral-600 text-xs rounded-md">
-                        {member.sector}
-                      </span>
-                    </div>
-                  )}
-
-                  {member.expertise && member.expertise.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-4">
-                      {member.expertise.slice(0, 3).map((exp, i) => (
-                        <span
-                          key={i}
-                          className="px-2 py-0.5 bg-primary-50 text-primary-700 text-xs rounded-md"
-                        >
-                          {exp}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
                   {/* Actions */}
-                  <div className="flex items-center gap-2 pt-4 border-t border-neutral-100">
-                    {member.website && (
+                  <div className="flex items-center gap-2">
+                    {member.website ? (
                       <a
                         href={member.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-primary-500 text-white text-sm font-medium rounded-md hover:bg-primary-600 transition-colors"
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-primary-500 text-white text-xs font-medium rounded-sm hover:bg-primary-600 transition-colors"
                       >
-                        <Globe className="w-4 h-4" />
+                        <Globe className="w-3.5 h-3.5" />
                         Site web
                       </a>
+                    ) : (
+                      <button className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-neutral-200 text-neutral-600 text-xs font-medium rounded-sm hover:bg-neutral-50 transition-colors">
+                        Voir le profil
+                      </button>
                     )}
                     {member.linkedin && (
                       <a
                         href={`https://linkedin.com/in/${member.linkedin}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-10 h-10 flex items-center justify-center bg-[#0077B5] text-white rounded-md hover:bg-[#006399] transition-colors"
+                        className="w-9 h-9 flex items-center justify-center bg-[#0077B5] text-white rounded-sm hover:bg-[#006399] transition-colors"
                       >
-                        <Linkedin className="w-5 h-5" />
+                        <Linkedin className="w-4 h-4" />
                       </a>
-                    )}
-                    {!member.website && !member.linkedin && (
-                      <button className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 border border-neutral-200 text-neutral-600 text-sm font-medium rounded-md hover:bg-neutral-50 transition-colors">
-                        Voir le profil
-                        <ExternalLink className="w-4 h-4" />
-                      </button>
                     )}
                   </div>
                 </div>
