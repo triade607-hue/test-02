@@ -156,7 +156,7 @@ export function HeaderSecondary() {
             >
               {/* Sidebar Header */}
               <div className="flex items-center justify-between p-6 border-b border-neutral-100">
-                <Link href="/home" onClick={closeMobileMenu}>
+                <Link href="/" onClick={closeMobileMenu}>
                   <Image
                     src="/images/logo.png"
                     alt="imo2tun"

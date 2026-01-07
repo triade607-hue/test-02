@@ -46,7 +46,7 @@ export function Header() {
         <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12">
           <div className="flex items-center justify-between h-14 lg:h-18">
             {/* Logo - Left */}
-            <Link href="/home" className="flex-shrink-0">
+            <Link href="/" className="flex-shrink-0">
               <Image
                 src="/images/logo.png"
                 alt="imo2tun"
@@ -133,7 +133,7 @@ export function Header() {
             >
               {/* Sidebar Header */}
               <div className="flex items-center justify-between p-6 border-b border-neutral-100">
-                <Link href="/home" onClick={closeMobileMenu}>
+                <Link href="/" onClick={closeMobileMenu}>
                   <Image
                     src="/images/logo.png"
                     alt="imo2tun"

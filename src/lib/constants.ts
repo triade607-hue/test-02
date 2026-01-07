@@ -29,9 +29,10 @@ export const SITE_CONFIG = {
 
 // Labels en français, URLs en anglais
 export const NAV_LINKS: NavLink[] = [
-  { label: "Accueil", href: "/" },
   { label: "À propos", href: "/about" },
+  { label: "Membres", href: "/members" },
   { label: "Actualités", href: "/news" },
   { label: "Événements", href: "/events" },
   { label: "Adhérer", href: "/membership" },
+
 ];
