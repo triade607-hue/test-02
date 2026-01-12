@@ -4,23 +4,29 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { ChevronLeft, Eye, EyeOff, Check } from "lucide-react";
+import { ChevronLeft, Check, ChevronDown } from "lucide-react";
+import { PROFESSIONS, COUNTRIES } from "@/lib/data";
 
 export default function RegisterPage() {
-  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: "",
     lastName: "",
+    firstName: "",
     email: "",
-    password: "",
+    profession: "",
+    customProfession: "",
+    dialCode: "+229",
+    phone: "",
     acceptTerms: false,
     acceptCommunications: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -30,6 +36,20 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    // Si "Autre" est sélectionné, utiliser customProfession comme profession
+    const finalProfession =
+      formData.profession === "Autre"
+        ? formData.customProfession
+        : formData.profession;
+
+    const dataToSubmit = {
+      ...formData,
+      profession: finalProfession,
+    };
+
+    console.log("Data to submit:", dataToSubmit);
+
     await new Promise((resolve) => setTimeout(resolve, 1500));
     setIsSubmitting(false);
     setIsSuccess(true);
@@ -44,7 +64,7 @@ export default function RegisterPage() {
         className="w-full max-w-4xl bg-white rounded-md shadow-2xl overflow-hidden flex flex-col md:flex-row"
       >
         {/* Left Panel - Branding */}
-        <div className="relative hidden md:flex md:w-[45%] md:min-h-[550px] text-white flex-col overflow-hidden">
+        <div className="relative hidden md:flex md:w-[45%] md:min-h-[600px] text-white flex-col overflow-hidden">
           {/* Background Image */}
           <motion.div
             animate={{ scale: 1.15, rotate: 2 }}
@@ -191,32 +211,83 @@ export default function RegisterPage() {
                   />
                 </div>
 
-                {/* Mot de passe */}
+                {/* Profession */}
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1.5">
-                    Mot de passe<span className="text-secondary-500">*</span>
+                    Profession<span className="text-secondary-500">*</span>
                   </label>
                   <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      value={formData.password}
+                    <select
+                      name="profession"
+                      value={formData.profession}
                       onChange={handleChange}
                       required
-                      placeholder="Minimum 8 caractères"
-                      className="w-full px-4 py-2.5 pr-12 bg-white border border-neutral-200 rounded-md text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
+                      className="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-md text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none cursor-pointer"
                     >
-                      {showPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
+                      <option value="">Sélectionnez votre profession</option>
+                      {PROFESSIONS.map((profession) => (
+                        <option key={profession} value={profession}>
+                          {profession}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Champ personnalisé si "Autre" est sélectionné */}
+                {formData.profession === "Autre" && (
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                      Précisez votre profession
+                      <span className="text-secondary-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="customProfession"
+                      value={formData.customProfession}
+                      onChange={handleChange}
+                      required
+                      placeholder="Votre profession"
+                      className="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-md text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    />
+                  </div>
+                )}
+
+                {/* Téléphone */}
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                    Numéro de téléphone
+                    <span className="text-secondary-500">*</span>
+                  </label>
+                  <div className="flex gap-2">
+                    {/* Sélecteur de pays */}
+                    <div className="relative w-[120px] flex-shrink-0">
+                      <select
+                        name="dialCode"
+                        value={formData.dialCode}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2.5 bg-white border border-neutral-200 rounded-md text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none cursor-pointer text-sm"
+                      >
+                        {COUNTRIES.map((country) => (
+                          <option key={country.code} value={country.dialCode}>
+                            {country.flag} {country.dialCode}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                    </div>
+
+                    {/* Numéro */}
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      required
+                      placeholder="00 00 00 00"
+                      className="flex-1 px-4 py-2.5 bg-white border border-neutral-200 rounded-md text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    />
                   </div>
                 </div>
 
@@ -229,7 +300,7 @@ export default function RegisterPage() {
                     checked={formData.acceptTerms}
                     onChange={handleChange}
                     required
-                    className="mt-0.5 w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+                    className="mt-0.5 w-4 h-4 text-primary-600 border-neutral-300 rounded-md focus:ring-primary-500"
                   />
                   <label
                     htmlFor="acceptTerms"
@@ -261,7 +332,7 @@ export default function RegisterPage() {
                     name="acceptCommunications"
                     checked={formData.acceptCommunications}
                     onChange={handleChange}
-                    className="mt-0.5 w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+                    className="mt-0.5 w-4 h-4 text-primary-600 border-neutral-300 rounded-md focus:ring-primary-500"
                   />
                   <label
                     htmlFor="acceptCommunications"

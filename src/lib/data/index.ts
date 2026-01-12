@@ -6,3 +6,5 @@ export * from "./missions";
 export * from "./stats";
 export * from "./values";
 export * from "./team";
+export * from "./professions";
+export * from "./countries";
