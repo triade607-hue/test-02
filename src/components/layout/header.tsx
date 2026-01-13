@@ -30,7 +30,7 @@ export function Header() {
     if (href === "/" || href === "/home") {
       return pathname === "/" || pathname === "/home";
     }
-    return pathname.startsWith(href);
+    return pathname === href || pathname.startsWith(href + "/");
   };
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);

@@ -411,100 +411,136 @@ export default function MembresPage() {
           </motion.div>
 
           {/* Members Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {filteredMembers.map((member, index) => (
               <motion.div
                 key={member.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                className="bg-white rounded-md border border-neutral-100 overflow-hidden hover:shadow-lg transition-shadow group"
+                className="group perspective-1000"
               >
-                {/* Logo Section - Bien visible */}
-                <div className="h-32 bg-neutral-50 flex items-center justify-center p-4">
-                  {member.type === "Contributeur" && member.avatar ? (
-                    <div className="relative w-20 h-20 rounded-full overflow-hidden border-3 border-white shadow-lg">
-                      <Image
-                        src={member.avatar}
-                        alt={member.name}
-                        fill
-                        className="object-cover"
-                      />
+                <div className="relative w-full h-full transition-transform duration-500 transform-style-3d group-hover:rotate-y-180">
+                  {/* Front - Logo + Nom */}
+                  <div className="backface-hidden bg-white rounded-md border border-neutral-200 overflow-hidden shadow-sm group-hover:shadow-md transition-shadow">
+                    {/* Zone Logo */}
+                    <div className="aspect-[4/3] sm:aspect-[4/3] flex items-center justify-center p-6 sm:p-6 bg-white">
+                      {member.type === "Contributeur" && member.avatar ? (
+                        <div className="relative w-28 h-28 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-neutral-100">
+                          <Image
+                            src={member.avatar}
+                            alt={member.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      ) : member.logo ? (
+                        <div className="relative w-full h-full max-h-28 sm:max-h-24">
+                          <Image
+                            src={member.logo}
+                            alt={member.name}
+                            fill
+                            className="object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          className="w-24 h-24 sm:w-20 sm:h-20 rounded-md flex items-center justify-center"
+                          style={{
+                            backgroundColor: `${TYPE_COLORS[member.type]}10`,
+                          }}
+                        >
+                          <Building2
+                            className="w-12 h-12 sm:w-10 sm:h-10"
+                            style={{ color: TYPE_COLORS[member.type] }}
+                          />
+                        </div>
+                      )}
                     </div>
-                  ) : member.logo ? (
-                    <div className="relative w-32 h-20">
-                      <Image
-                        src={member.logo}
-                        alt={member.name}
-                        fill
-                        className="object-contain"
-                      />
-                    </div>
-                  ) : (
-                    <div
-                      className="w-20 h-20 rounded-md flex items-center justify-center"
-                      style={{
-                        backgroundColor: `${TYPE_COLORS[member.type]}15`,
-                      }}
-                    >
-                      <Building2
-                        className="w-10 h-10"
-                        style={{ color: TYPE_COLORS[member.type] }}
-                      />
-                    </div>
-                  )}
-                </div>
 
-                {/* Content - Aligné à gauche */}
-                <div className="p-4">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <h3 className="font-semibold text-neutral-900 group-hover:text-primary-600 transition-colors line-clamp-1">
-                      {member.name}
-                    </h3>
-                    <span
-                      className="flex-shrink-0 px-2 py-0.5 text-[10px] font-semibold rounded-sm text-white"
+                    {/* Nom */}
+                    <div className="px-4 py-3 border-t border-neutral-100 bg-neutral-50">
+                      <h3 className="font-semibold text-neutral-800 text-center text-sm sm:text-xs md:text-sm uppercase tracking-wide line-clamp-1">
+                        {member.name}
+                      </h3>
+                    </div>
+                  </div>
+
+                  {/* Back - Informations */}
+                  <div className="absolute inset-0 backface-hidden rotate-y-180">
+                    <div
+                      className="w-full h-full rounded-md p-5 sm:p-4 flex flex-col text-white"
                       style={{ backgroundColor: TYPE_COLORS[member.type] }}
                     >
-                      {member.type}
-                    </span>
-                  </div>
+                      {/* Header */}
+                      <h3 className="font-bold text-base sm:text-sm line-clamp-2 mb-2">
+                        {member.name}
+                      </h3>
 
-                  <div className="flex items-center gap-1 text-xs text-neutral-500 mb-2">
-                    <MapPin className="w-3 h-3" />
-                    <span>{member.location}</span>
-                  </div>
+                      {/* Badge type */}
+                      <span className="inline-block self-start px-2 py-0.5 bg-white/20 text-white text-xs sm:text-[10px] font-medium rounded mb-2">
+                        {member.type}
+                      </span>
 
-                  <p className="text-xs text-neutral-600 line-clamp-2 mb-3">
-                    {member.description}
-                  </p>
+                      {/* Location */}
+                      <div className="flex items-center gap-1.5 text-white/80 text-sm sm:text-xs mb-3 sm:mb-2">
+                        <MapPin className="w-4 h-4 sm:w-3 sm:h-3 flex-shrink-0" />
+                        <span className="truncate">{member.location}</span>
+                      </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    {member.website ? (
-                      <a
-                        href={member.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-primary-500 text-white text-xs font-medium rounded-sm hover:bg-primary-600 transition-colors"
-                      >
-                        <Globe className="w-3.5 h-3.5" />
-                        Site web
-                      </a>
-                    ) : (
-                      <button className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-neutral-200 text-neutral-600 text-xs font-medium rounded-sm hover:bg-neutral-50 transition-colors">
-                        Voir le profil
-                      </button>
-                    )}
-                    {member.linkedin && (
-                      <a
-                        href={`https://linkedin.com/in/${member.linkedin}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-9 h-9 flex items-center justify-center bg-[#0077B5] text-white rounded-sm hover:bg-[#006399] transition-colors"
-                      >
-                        <Linkedin className="w-4 h-4" />
-                      </a>
-                    )}
+                      {/* Description */}
+                      <p className="text-white/90 text-sm sm:text-xs line-clamp-4 sm:line-clamp-3 mb-auto">
+                        {member.description}
+                      </p>
+
+                      {/* Sector/Expertise - visible on mobile */}
+                      {member.sector && (
+                        <span className="inline-block self-start px-2 py-1 bg-white/20 text-white text-xs sm:text-[10px] rounded mt-2 mb-2">
+                          {member.sector}
+                        </span>
+                      )}
+                      {member.expertise && member.expertise.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 sm:gap-1 mt-2 mb-2">
+                          {member.expertise.slice(0, 3).map((exp, i) => (
+                            <span
+                              key={i}
+                              className="px-2 py-1 sm:py-0.5 bg-white/20 text-white text-xs sm:text-[10px] rounded"
+                            >
+                              {exp}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* CTA */}
+                      <div className="mt-3">
+                        {member.type === "Contributeur" ? (
+                          <a
+                            href={
+                              member.linkedin
+                                ? `https://linkedin.com/in/${member.linkedin}`
+                                : "#"
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-3 sm:py-2 bg-white text-[#0077B5] text-sm sm:text-xs font-medium rounded-md hover:bg-white/90 transition-colors"
+                          >
+                            <Linkedin className="w-5 h-5 sm:w-4 sm:h-4" />
+                            Voir le profil LinkedIn
+                          </a>
+                        ) : (
+                          <a
+                            href={member.website || "#"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-3 sm:py-2 bg-white text-neutral-800 text-sm sm:text-xs font-medium rounded-md hover:bg-white/90 transition-colors"
+                          >
+                            <Globe className="w-5 h-5 sm:w-4 sm:h-4" />
+                            Visiter le site web
+                          </a>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </motion.div>

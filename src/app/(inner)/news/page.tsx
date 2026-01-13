@@ -1,14 +1,90 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { Newspaper, PenTool, BookOpen } from "lucide-react";
+import { ChevronRight, ChevronLeft, Search } from "lucide-react";
 
 // Components
 import { HeroSecondary } from "@/components/shared/hero-secondary";
-import { Button } from "@/components/ui";
+import { ArticleCard } from "@/components/shared/article-card";
+
+// Data
+import { articles } from "@/lib/data/articles";
+
+// Constants
+const ARTICLES_PER_PAGE = 6;
+const ARTICLE_CATEGORIES = [
+  "Toutes",
+  "Tech",
+  "Digital",
+  "Education",
+  "Événement",
+];
 
 export default function ArticlesPage() {
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("Toutes");
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Filter articles
+  const filteredArticles = useMemo(() => {
+    return articles.filter((article) => {
+      // Search filter
+      const matchesSearch =
+        article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        article.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        article.tags?.some((tag) =>
+          tag.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+
+      // Category filter
+      const matchesCategory =
+        selectedCategory === "Toutes" || article.category === selectedCategory;
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [searchQuery, selectedCategory]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredArticles.length / ARTICLES_PER_PAGE);
+  const paginatedArticles = useMemo(() => {
+    const startIndex = (currentPage - 1) * ARTICLES_PER_PAGE;
+    return filteredArticles.slice(startIndex, startIndex + ARTICLES_PER_PAGE);
+  }, [filteredArticles, currentPage]);
+
+  // Reset to page 1 when filters change
+  const handleFilterChange = (
+    setter: React.Dispatch<React.SetStateAction<string>>,
+    value: string
+  ) => {
+    setter(value);
+    setCurrentPage(1);
+  };
+
+  // Generate page numbers
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, "...", totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1, "...", totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, "...", currentPage, "...", totalPages);
+      }
+    }
+
+    return pages;
+  };
+
   return (
     <>
       {/* Hero */}
@@ -18,132 +94,150 @@ export default function ArticlesPage() {
         backgroundImage="/images/hero-bg.png"
       />
 
-      {/* Coming Soon Section */}
-      <section className="py-20 lg:py-32 bg-neutral-50">
-        <div className="max-w-4xl mx-auto px-6 md:px-8 lg:px-12">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center"
-          >
-            {/* Illustration animée - Stack de cartes */}
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="relative inline-flex items-center justify-center mb-8"
-            >
-              {/* Cartes empilées */}
-              <motion.div
-                animate={{ rotate: [-3, -3], y: [0, -5, 0] }}
-                transition={{ y: { duration: 3, repeat: Infinity } }}
-                className="absolute w-28 h-36 bg-[#26A69A]/20 rounded-md -rotate-6 -left-4"
-              />
-              <motion.div
-                animate={{ rotate: [3, 3], y: [0, -3, 0] }}
-                transition={{
-                  y: { duration: 2.5, repeat: Infinity, delay: 0.3 },
-                }}
-                className="absolute w-28 h-36 bg-[#F9A825]/20 rounded-md rotate-3 -right-4"
-              />
-              <motion.div
-                animate={{ y: [0, -8, 0] }}
-                transition={{ duration: 2, repeat: Infinity, delay: 0.1 }}
-                className="relative w-28 h-36 bg-gradient-to-br from-[#0077B6] to-[#0077B6]/80 rounded-md flex items-center justify-center shadow-lg"
-              >
-                <Newspaper className="w-10 h-10 text-white" />
-              </motion.div>
-
-              {/* Icône stylo animée */}
-              <motion.div
-                animate={{
-                  x: [0, 5, 0],
-                  y: [0, -5, 0],
-                  rotate: [0, 10, 0],
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="absolute -top-4 right-0 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center"
-              >
-                <PenTool className="w-5 h-5 text-[#F9A825]" />
-              </motion.div>
-            </motion.div>
-
-            {/* Titre */}
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4"
-            >
-              Nos articles arrivent bientôt
-            </motion.h2>
-
-            {/* Description */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="text-lg text-neutral-600 mb-4 max-w-2xl mx-auto"
-            >
-              Notre équipe éditoriale prépare du contenu de qualité pour vous.
-            </motion.p>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.5 }}
-              className="text-neutral-500 mb-8 max-w-xl mx-auto"
-            >
-              Analyses, interviews d&apos;experts, études de cas et actualités
-              sur l&apos;écosystème numérique africain seront bientôt
-              disponibles.
-            </motion.p>
-
-            {/* Categories preview */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
-              className="flex flex-wrap justify-center gap-3 mb-10"
-            >
-              {[
-                "Tech",
-                "Cloud",
-                "Data & IA",
-                "Cybersécurité",
-                "Innovation",
-              ].map((cat, i) => (
-                <span
-                  key={i}
-                  className="px-4 py-2 bg-white rounded-md text-sm text-neutral-600 border border-neutral-200"
+      {/* Main Content */}
+      <div className="bg-neutral-50 min-h-screen">
+        {/* Breadcrumb + Search Bar */}
+        <div className="bg-neutral-50">
+          <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12 py-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              {/* Breadcrumb */}
+              <nav className="flex items-center gap-2 text-sm">
+                <Link
+                  href="/"
+                  className="text-neutral-600 hover:text-primary-600 transition-colors"
                 >
-                  {cat}
+                  Accueil
+                </Link>
+                <ChevronRight className="w-4 h-4 text-neutral-400" />
+                <span className="text-secondary-500 font-medium">
+                  Actualités & Insights
                 </span>
-              ))}
-            </motion.div>
+              </nav>
 
-            {/* CTA */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.7 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center"
-            >
-              <Link href="/events">
-                <Button
-                  variant="primary"
-                  leftIcon={<BookOpen className="w-4 h-4" />}
-                >
-                  Voir nos événements
-                </Button>
-              </Link>
-              <Link href="/">
-                <Button variant="outline">Retour à l&apos;accueil</Button>
-              </Link>
-            </motion.div>
-          </motion.div>
+              {/* Search */}
+              <div className="relative w-full sm:w-auto">
+                <input
+                  type="text"
+                  placeholder="Rechercher"
+                  value={searchQuery}
+                  onChange={(e) =>
+                    handleFilterChange(setSearchQuery, e.target.value)
+                  }
+                  className="w-full sm:w-64 pl-4 pr-10 py-2 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+              </div>
+            </div>
+          </div>
         </div>
-      </section>
+
+        {/* Filters */}
+        <div className="bg-neutral-50 border-b border-neutral-100">
+          <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12 py-6">
+            <p className="text-sm font-bold text-neutral-900 mb-4 uppercase tracking-wide">
+              Filtrer
+            </p>
+            <div className="flex flex-wrap gap-3 sm:gap-4">
+              {/* Category Filter */}
+              <div className="relative">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) =>
+                    handleFilterChange(setSelectedCategory, e.target.value)
+                  }
+                  className="appearance-none w-full sm:w-48 px-3 sm:px-4 py-2.5 pr-8 sm:pr-10 border border-neutral-200 rounded-md text-xs sm:text-sm bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent cursor-pointer"
+                >
+                  {ARTICLE_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat === "Toutes" ? "Catégorie" : cat}
+                    </option>
+                  ))}
+                </select>
+                <ChevronRight className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 rotate-90 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Articles Grid */}
+        <section className="py-12 lg:py-16">
+          <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12">
+            {paginatedArticles.length > 0 ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {paginatedArticles.map((article, index) => (
+                  <ArticleCard
+                    key={article.id}
+                    article={article}
+                    index={index}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <p className="text-neutral-500 text-lg">
+                  Aucun article trouvé pour ces critères.
+                </p>
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedCategory("Toutes");
+                  }}
+                  className="mt-4 text-primary-600 font-medium hover:underline"
+                >
+                  Réinitialiser les filtres
+                </button>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-12">
+                {/* Previous Button */}
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
+                  disabled={currentPage === 1}
+                  className="w-10 h-10 flex items-center justify-center rounded-md border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+
+                {/* Page Numbers */}
+                {getPageNumbers().map((page, index) => (
+                  <button
+                    key={index}
+                    onClick={() =>
+                      typeof page === "number" && setCurrentPage(page)
+                    }
+                    disabled={page === "..."}
+                    className={`w-10 h-10 flex items-center justify-center rounded-md text-sm font-medium transition-colors ${
+                      page === currentPage
+                        ? "bg-secondary-500 text-white"
+                        : page === "..."
+                          ? "cursor-default text-neutral-400"
+                          : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                {/* Next Button */}
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="w-10 h-10 flex items-center justify-center rounded-md border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
     </>
   );
 }

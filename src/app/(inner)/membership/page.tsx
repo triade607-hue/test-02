@@ -1,147 +1,415 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { Users, Sparkles, ArrowRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ChevronRight,
+  Check,
+  MessageSquare,
+  Shield,
+  Star,
+  ClipboardList,
+  Search,
+  CheckCircle,
+  PartyPopper,
+  Plus,
+  Minus,
+  Mail,
+} from "lucide-react";
 
 // Components
 import { HeroSecondary } from "@/components/shared/hero-secondary";
 import { Button } from "@/components/ui";
 
-export default function AdhererPage() {
+// Data
+import {
+  memberTypes,
+  membershipTiers,
+  membershipBenefits,
+  adhesionProcess,
+  membershipFAQ,
+} from "@/lib/data/membership";
+
+// Types
+type MemberTypeId = "offreur" | "utilisateur" | "contributeur" | "partenaire";
+
+export default function MembershipPage() {
+  const [selectedType, setSelectedType] = useState<MemberTypeId>("offreur");
+  const [openFaqId, setOpenFaqId] = useState<string | null>("1");
+
+  const currentType = memberTypes.find((t) => t.id === selectedType);
+  const currentTiers =
+    membershipTiers[selectedType as keyof typeof membershipTiers];
+
+  // Get icon for benefits
+  const getBenefitIcon = (iconName: string) => {
+    switch (iconName) {
+      case "message":
+        return <MessageSquare className="w-8 h-8" />;
+      case "shield":
+        return <Shield className="w-8 h-8" />;
+      case "star":
+        return <Star className="w-8 h-8" />;
+      default:
+        return <MessageSquare className="w-8 h-8" />;
+    }
+  };
+
+  // Get icon for process steps
+  const getProcessIcon = (iconName: string) => {
+    const iconClass = "w-10 h-10 text-white";
+    switch (iconName) {
+      case "clipboard":
+        return <ClipboardList className={iconClass} />;
+      case "search":
+        return <Search className={iconClass} />;
+      case "check":
+        return <CheckCircle className={iconClass} />;
+      case "party":
+        return <PartyPopper className={iconClass} />;
+      default:
+        return <ClipboardList className={iconClass} />;
+    }
+  };
+
+  // Get background color for process steps
+  const getProcessColor = (index: number) => {
+    const colors = [
+      "bg-[#0077B6]",
+      "bg-[#26A69A]",
+      "bg-[#F9A825]",
+      "bg-[#E91E63]",
+    ];
+    return colors[index] || colors[0];
+  };
+
   return (
     <>
       {/* Hero */}
       <HeroSecondary
-        title="Rejoignez-nous"
-        subtitle="Devenez membre de l'écosystème imo2tun"
+        title="Rejoignez la communauté imo2tun"
         backgroundImage="/images/hero-bg.png"
       />
 
-      {/* Coming Soon Section */}
-      <section className="py-20 lg:py-32 bg-neutral-50">
-        <div className="max-w-4xl mx-auto px-6 md:px-8 lg:px-12">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center"
+      {/* Breadcrumb */}
+      <div className="bg-neutral-50">
+        <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <nav className="flex items-center gap-2 text-sm">
+              <Link
+                href="/"
+                className="text-neutral-600 hover:text-primary-600 transition-colors"
+              >
+                Accueil
+              </Link>
+              <ChevronRight className="w-4 h-4 text-neutral-400" />
+              <span className="text-secondary-500 font-medium">Adhérer</span>
+            </nav>
+          </div>
+        </div>
+      </div>
+
+      {/* Type Selection Section */}
+      <section className="py-16 lg:py-20 bg-neutral-50">
+        <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12">
+          {/* Title */}
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-2xl md:text-3xl lg:text-4xl font-bold text-neutral-900 text-center mb-10"
           >
-            {/* Icon animé */}
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="relative inline-flex items-center justify-center mb-8"
-            >
-              {/* Cercle background */}
-              <div className="w-32 h-32 bg-gradient-to-br from-[#0077B6]/10 to-[#26A69A]/10 rounded-full flex items-center justify-center">
-                <div className="w-24 h-24 bg-gradient-to-br from-[#0077B6]/20 to-[#26A69A]/20 rounded-full flex items-center justify-center">
-                  <Users className="w-12 h-12 text-[#0077B6]" />
-                </div>
-              </div>
+            Choisissez votre type d&apos;adhésion
+          </motion.h2>
 
-              {/* Sparkles animés */}
-              <motion.div
-                animate={{
-                  rotate: 360,
-                  scale: [1, 1.2, 1],
-                }}
-                transition={{
-                  rotate: { duration: 10, repeat: Infinity, ease: "linear" },
-                  scale: { duration: 2, repeat: Infinity },
-                }}
-                className="absolute -top-2 -right-2"
+          {/* Type Tabs */}
+          <div className="flex flex-wrap justify-center gap-2 mb-8">
+            {memberTypes.map((type) => (
+              <button
+                key={type.id}
+                onClick={() => setSelectedType(type.id as MemberTypeId)}
+                className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
+                  selectedType === type.id
+                    ? "bg-[#F9A825] text-white shadow-md"
+                    : "bg-white text-neutral-600 hover:bg-neutral-100 border border-neutral-200"
+                }`}
               >
-                <Sparkles className="w-6 h-6 text-[#F9A825]" />
-              </motion.div>
-              <motion.div
-                animate={{
-                  rotate: -360,
-                  scale: [1, 1.3, 1],
-                }}
-                transition={{
-                  rotate: { duration: 8, repeat: Infinity, ease: "linear" },
-                  scale: { duration: 2.5, repeat: Infinity, delay: 0.5 },
-                }}
-                className="absolute -bottom-1 -left-3"
-              >
-                <Sparkles className="w-5 h-5 text-[#26A69A]" />
-              </motion.div>
+                {type.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Type Description */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={selectedType}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="bg-[#FFF8E1] rounded-md p-6 mb-12 max-w-4xl mx-auto"
+            >
+              <p className="text-neutral-700 text-center leading-relaxed">
+                {currentType?.description}
+              </p>
             </motion.div>
+          </AnimatePresence>
 
-            {/* Titre */}
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4"
-            >
-              Bientôt disponible
-            </motion.h2>
-
-            {/* Description */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="text-lg text-neutral-600 mb-4 max-w-2xl mx-auto"
-            >
-              Notre plateforme d&apos;adhésion est en cours de finalisation.
-            </motion.p>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.5 }}
-              className="text-neutral-500 mb-8 max-w-xl mx-auto"
-            >
-              Très bientôt, vous pourrez rejoindre notre communauté en tant
-              qu&apos;Offreur, Utilisateur, Contributeur ou Partenaire et
-              accéder à tous nos programmes.
-            </motion.p>
-
-            {/* Features preview */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
-              className="grid sm:grid-cols-3 gap-4 mb-10 max-w-2xl mx-auto"
-            >
-              {[
-                { label: "4 types de membres", color: "bg-[#0077B6]" },
-                { label: "Accès aux formations", color: "bg-[#F9A825]" },
-                { label: "Réseau d'experts", color: "bg-[#26A69A]" },
-              ].map((item, i) => (
+          {/* Pricing Cards */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            {currentTiers.map((tier, index) => (
+              <motion.div
+                key={tier.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className={`relative rounded-md overflow-hidden ${
+                  tier.featured
+                    ? "bg-white shadow-xl ring-2 ring-[#F9A825] scale-105 z-10"
+                    : "bg-white shadow-lg"
+                }`}
+              >
+                {/* Header */}
                 <div
-                  key={i}
-                  className="flex items-center gap-2 justify-center text-sm text-neutral-600"
+                  className={`p-6 text-center ${
+                    tier.featured
+                      ? "bg-[#F9A825] text-white"
+                      : "bg-[#0077B6] text-white"
+                  }`}
                 >
-                  <div className={`w-2 h-2 rounded-full ${item.color}`} />
-                  {item.label}
+                  <span
+                    className={`inline-block px-3 py-1 rounded-full text-xs font-semibold mb-3 ${
+                      tier.featured
+                        ? "bg-white/20 text-white"
+                        : "bg-white/20 text-white"
+                    }`}
+                  >
+                    {tier.name}
+                  </span>
+                  <div className="flex items-baseline justify-center gap-1">
+                    <span className="text-2xl md:text-3xl font-bold">
+                      {tier.price}
+                    </span>
+                    <span className="text-sm opacity-80">{tier.currency}</span>
+                  </div>
                 </div>
-              ))}
-            </motion.div>
 
-            {/* CTA */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.7 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center"
-            >
-              <Link href="/contact">
-                <Button
-                  variant="primary"
-                  rightIcon={<ArrowRight className="w-4 h-4" />}
+                {/* Features */}
+                <div className="p-6">
+                  <ul className="space-y-3">
+                    {tier.features.map((feature, i) => (
+                      <li key={i} className="flex items-start gap-3 text-sm">
+                        <Check className="w-4 h-4 text-[#26A69A] flex-shrink-0 mt-0.5" />
+                        <span className="text-neutral-600">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* CTA */}
+                <div className="px-6 pb-6">
+                  <Link
+                    href={`/membership/candidature?type=${selectedType}&tier=${tier.id}`}
+                  >
+                    <Button
+                      variant={tier.featured ? "primary" : "outline"}
+                      className="w-full"
+                    >
+                      Choisir
+                    </Button>
+                  </Link>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why Join Section */}
+      <section className="py-16 lg:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-2xl md:text-3xl lg:text-4xl font-bold text-neutral-900 text-center mb-12"
+          >
+            Pourquoi adhérer
+          </motion.h2>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            {membershipBenefits.map((benefit, index) => (
+              <motion.div
+                key={benefit.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="text-center"
+              >
+                <div className="w-16 h-16 mx-auto mb-4 bg-[#FFF8E1] rounded-full flex items-center justify-center text-[#F9A825]">
+                  {getBenefitIcon(benefit.icon)}
+                </div>
+                <h3 className="text-lg font-bold text-neutral-900 mb-2">
+                  {benefit.title}
+                </h3>
+                <p className="text-sm text-neutral-600 leading-relaxed">
+                  {benefit.description}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div className="text-center mt-12">
+            <Link href={`/membership/candidature?type=${selectedType}`}>
+              <Button
+                variant="primary"
+                size="lg"
+                rightIcon={<ChevronRight className="w-5 h-5" />}
+              >
+                Commencer ma candidature
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Process Section */}
+      <section className="py-16 lg:py-20 bg-neutral-50">
+        <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-2xl md:text-3xl lg:text-4xl font-bold text-neutral-900 text-center mb-12"
+          >
+            Processus d&apos;adhésion
+          </motion.h2>
+
+          <div className="grid md:grid-cols-4 gap-8 max-w-5xl mx-auto">
+            {adhesionProcess.map((step, index) => (
+              <motion.div
+                key={step.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="text-center relative"
+              >
+                {/* Icon */}
+                <div
+                  className={`w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center ${getProcessColor(index)}`}
                 >
-                  Nous contacter
-                </Button>
-              </Link>
-              <Link href="/">
-                <Button variant="outline">Retour à l&apos;accueil</Button>
-              </Link>
-            </motion.div>
-          </motion.div>
+                  {getProcessIcon(step.icon)}
+                </div>
+
+                {/* Title */}
+                <h3 className="text-lg font-bold text-neutral-900 mb-2">
+                  {step.title}
+                </h3>
+
+                {/* Description */}
+                <p className="text-sm text-neutral-500 leading-relaxed">
+                  {step.description}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-16 lg:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-2xl md:text-3xl lg:text-4xl font-bold text-neutral-900 text-center mb-12"
+          >
+            Questions fréquemment posées
+          </motion.h2>
+
+          <div className="grid lg:grid-cols-[1fr_380px] gap-12 max-w-6xl mx-auto">
+            {/* FAQ Accordion */}
+            <div className="space-y-3">
+              {membershipFAQ.map((faq) => (
+                <motion.div
+                  key={faq.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="bg-neutral-50 rounded-md overflow-hidden"
+                >
+                  <button
+                    onClick={() =>
+                      setOpenFaqId(openFaqId === faq.id ? null : faq.id)
+                    }
+                    className="w-full flex items-center justify-between p-4 text-left hover:bg-neutral-100 transition-colors"
+                  >
+                    <span className="font-medium text-neutral-900 pr-4">
+                      {faq.question}
+                    </span>
+                    {openFaqId === faq.id ? (
+                      <Minus className="w-5 h-5 text-neutral-500 flex-shrink-0" />
+                    ) : (
+                      <Plus className="w-5 h-5 text-neutral-500 flex-shrink-0" />
+                    )}
+                  </button>
+                  <AnimatePresence>
+                    {openFaqId === faq.id && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <p className="px-4 pb-4 text-sm text-neutral-600 leading-relaxed">
+                          {faq.answer}
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Contact Card */}
+            <div className="bg-neutral-50 rounded-md p-8 h-fit">
+              <div className="w-16 h-16 mx-auto mb-4 bg-[#FFF8E1] rounded-full flex items-center justify-center">
+                <Mail className="w-8 h-8 text-[#F9A825]" />
+              </div>
+              <h3 className="text-lg font-bold text-neutral-900 text-center mb-2">
+                Avez-vous d&apos;autres questions ?
+              </h3>
+              <p className="text-sm text-neutral-600 text-center mb-6 leading-relaxed">
+                Combien Forum observé de la disponibilité de compétences
+                opérationnelles chez les jeunes dès leur premier jour
+                d&apos;embauche.
+              </p>
+              <div className="text-center">
+                <Link href="/contact">
+                  <Button variant="outline">Écrivez-nous directement</Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Final CTA */}
+          <div className="text-center mt-16">
+            <Link href={`/membership/candidature?type=${selectedType}`}>
+              <Button
+                variant="primary"
+                size="lg"
+                rightIcon={<ChevronRight className="w-5 h-5" />}
+              >
+                Commencer ma candidature
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
     </>

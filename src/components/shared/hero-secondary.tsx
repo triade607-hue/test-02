@@ -7,12 +7,14 @@ interface HeroSecondaryProps {
   title: string;
   subtitle?: string;
   backgroundImage?: string;
+  children?: React.ReactNode;
 }
 
 export function HeroSecondary({
   title,
   subtitle,
   backgroundImage = "/images/hero-bg.png",
+  children,
 }: HeroSecondaryProps) {
   return (
     <section className="relative min-h-[480px] md:min-h-[520px] lg:min-h-[550px] flex flex-col">
@@ -29,7 +31,7 @@ export function HeroSecondary({
 
       {/* Content */}
       <div className="relative z-10 flex-1 flex items-center justify-center pt-20 pb-16">
-        <div className="text-center px-4">
+        <div className="text-center px-4 max-w-4xl mx-auto">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -47,6 +49,15 @@ export function HeroSecondary({
             >
               {subtitle}
             </motion.p>
+          )}
+          {children && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              {children}
+            </motion.div>
           )}
         </div>
       </div>
