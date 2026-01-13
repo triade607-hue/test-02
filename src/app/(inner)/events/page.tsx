@@ -30,14 +30,12 @@ const EVENT_CATEGORIES = [
   "Cybersécurité",
   "Design",
 ];
-const EVENT_LOCATIONS = ["Tous", "Cotonou", "Paris", "En ligne"];
 
 export default function EventsPage() {
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState("Tous");
   const [selectedCategory, setSelectedCategory] = useState("Toutes");
-  const [selectedLocation, setSelectedLocation] = useState("Tous");
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -58,14 +56,9 @@ export default function EventsPage() {
       const matchesCategory =
         selectedCategory === "Toutes" || event.category === selectedCategory;
 
-      // Location filter
-      const matchesLocation =
-        selectedLocation === "Tous" ||
-        event.location.toLowerCase().includes(selectedLocation.toLowerCase());
-
-      return matchesSearch && matchesType && matchesCategory && matchesLocation;
+      return matchesSearch && matchesType && matchesCategory;
     });
-  }, [searchQuery, selectedType, selectedCategory, selectedLocation]);
+  }, [searchQuery, selectedType, selectedCategory]);
 
   // Pagination
   const totalPages = Math.ceil(filteredEvents.length / EVENTS_PER_PAGE);
@@ -192,24 +185,6 @@ export default function EventsPage() {
                 </select>
                 <ChevronRight className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 rotate-90 pointer-events-none" />
               </div>
-
-              {/* Location Filter */}
-              <div className="relative col-span-1">
-                <select
-                  value={selectedLocation}
-                  onChange={(e) =>
-                    handleFilterChange(setSelectedLocation, e.target.value)
-                  }
-                  className="appearance-none w-full sm:w-40 px-3 sm:px-4 py-2.5 pr-8 sm:pr-10 border border-neutral-200 rounded-md text-xs sm:text-sm bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent cursor-pointer"
-                >
-                  {EVENT_LOCATIONS.map((loc) => (
-                    <option key={loc} value={loc}>
-                      {loc === "Tous" ? "Lieu" : loc}
-                    </option>
-                  ))}
-                </select>
-                <ChevronRight className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 rotate-90 pointer-events-none" />
-              </div>
             </div>
           </div>
         </div>
@@ -233,7 +208,6 @@ export default function EventsPage() {
                     setSearchQuery("");
                     setSelectedType("Tous");
                     setSelectedCategory("Toutes");
-                    setSelectedLocation("Tous");
                   }}
                   className="mt-4 text-primary-600 font-medium hover:underline"
                 >

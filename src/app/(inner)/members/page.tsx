@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -12,8 +11,7 @@ import {
   Handshake,
   MapPin,
   ExternalLink,
-  ChevronDown,
-  X,
+  ChevronRight,
   Globe,
   Linkedin,
 } from "lucide-react";
@@ -180,27 +178,20 @@ const MEMBER_TYPES: {
   label: string;
   icon: React.ElementType;
 }[] = [
-  { value: "all", label: "Tous les membres", icon: Users },
+  { value: "all", label: "Tous", icon: Users },
   { value: "Offreur", label: "Offreurs", icon: Building2 },
   { value: "Utilisateur", label: "Utilisateurs", icon: Building2 },
   { value: "Contributeur", label: "Contributeurs", icon: User },
   { value: "Partenaire", label: "Partenaires", icon: Handshake },
 ];
 
-const TIERS: { value: Tier | "all"; label: string; color: string }[] = [
-  { value: "all", label: "Tous les tiers", color: "#6B7280" },
-  { value: "Asuka", label: "Asuka", color: "#26A69A" },
-  { value: "Sunun", label: "Sunun", color: "#F9A825" },
-  { value: "Mindaho", label: "Mindaho", color: "#0077B6" },
-  { value: "Dah", label: "Dah", color: "#7C3AED" },
+const TIERS: { value: Tier | "all"; label: string }[] = [
+  { value: "all", label: "Tous les tiers" },
+  { value: "Asuka", label: "Asuka" },
+  { value: "Sunun", label: "Sunun" },
+  { value: "Mindaho", label: "Mindaho" },
+  { value: "Dah", label: "Dah" },
 ];
-
-const TIER_COLORS: Record<Tier, string> = {
-  Asuka: "#26A69A",
-  Sunun: "#F9A825",
-  Mindaho: "#0077B6",
-  Dah: "#7C3AED",
-};
 
 const TYPE_COLORS: Record<MemberType, string> = {
   Offreur: "#0077B6",
@@ -214,12 +205,17 @@ export default function MembresPage() {
   const [selectedType, setSelectedType] = useState<MemberType | "all">("all");
   const [selectedTier, setSelectedTier] = useState<Tier | "all">("all");
 
+  // Filtered members
   const filteredMembers = useMemo(() => {
     return MOCK_MEMBERS.filter((member) => {
       const matchesSearch =
         member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         member.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        member.location.toLowerCase().includes(searchQuery.toLowerCase());
+        member.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        member.sector?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        member.expertise?.some((exp) =>
+          exp.toLowerCase().includes(searchQuery.toLowerCase())
+        );
       const matchesType =
         selectedType === "all" || member.type === selectedType;
       const matchesTier =
@@ -228,12 +224,16 @@ export default function MembresPage() {
     });
   }, [searchQuery, selectedType, selectedTier]);
 
-  const memberCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: MOCK_MEMBERS.length };
-    MOCK_MEMBERS.forEach((member) => {
-      counts[member.type] = (counts[member.type] || 0) + 1;
-    });
-    return counts;
+  // Stats
+  const stats = useMemo(() => {
+    return {
+      total: MOCK_MEMBERS.length,
+      offreurs: MOCK_MEMBERS.filter((m) => m.type === "Offreur").length,
+      utilisateurs: MOCK_MEMBERS.filter((m) => m.type === "Utilisateur").length,
+      contributeurs: MOCK_MEMBERS.filter((m) => m.type === "Contributeur")
+        .length,
+      partenaires: MOCK_MEMBERS.filter((m) => m.type === "Partenaire").length,
+    };
   }, []);
 
   const clearFilters = () => {
@@ -242,71 +242,93 @@ export default function MembresPage() {
     setSelectedTier("all");
   };
 
-  const hasActiveFilters =
-    searchQuery || selectedType !== "all" || selectedTier !== "all";
-
   return (
     <>
       {/* Hero */}
       <HeroSecondary
         title="Nos Membres"
-        subtitle="Découvrez l'écosystème imo2tun"
+        subtitle="Découvrez les acteurs de l'écosystème numérique africain"
         backgroundImage="/images/hero-bg.png"
       />
 
-      <main className="py-12 md:py-16 bg-neutral-50">
-        <div className="container mx-auto px-4">
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
-          >
-            {MEMBER_TYPES.slice(1).map((type) => (
-              <div
-                key={type.value}
-                className="bg-white rounded-md p-4 border border-neutral-100"
-              >
-                <div
-                  className="w-10 h-10 rounded-md flex items-center justify-center mb-3"
-                  style={{
-                    backgroundColor: `${TYPE_COLORS[type.value as MemberType]}15`,
-                  }}
+      {/* Main Content */}
+      <div className="bg-neutral-50 min-h-screen">
+        {/* Breadcrumb + Stats + Search - Single Line */}
+        <div className="bg-neutral-50">
+          <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12 py-4">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              {/* Left: Breadcrumb */}
+              <nav className="flex items-center gap-2 text-sm">
+                <Link
+                  href="/"
+                  className="text-neutral-600 hover:text-primary-600 transition-colors"
                 >
-                  <type.icon
-                    className="w-5 h-5"
-                    style={{ color: TYPE_COLORS[type.value as MemberType] }}
-                  />
-                </div>
-                <p className="text-2xl font-bold text-neutral-900">
-                  {memberCounts[type.value] || 0}
-                </p>
-                <p className="text-sm text-neutral-500">{type.label}</p>
-              </div>
-            ))}
-          </motion.div>
+                  Accueil
+                </Link>
+                <ChevronRight className="w-4 h-4 text-neutral-400" />
+                <span className="text-secondary-500 font-medium">Membres</span>
+              </nav>
 
-          {/* Filters */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-            className="bg-white rounded-md border border-neutral-100 p-4 mb-8"
-          >
-            <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-              {/* Search */}
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+              {/* Center: Stats inline */}
+              <div className="flex items-center gap-4 text-sm">
+                <span className="text-neutral-500">
+                  <span className="font-semibold text-neutral-900">
+                    {stats.total}
+                  </span>{" "}
+                  membres
+                </span>
+                <span className="hidden sm:inline text-neutral-300">|</span>
+                <span className="hidden sm:inline text-neutral-500">
+                  <span className="font-semibold text-[#0077B6]">
+                    {stats.offreurs}
+                  </span>{" "}
+                  offreurs
+                </span>
+                <span className="hidden sm:inline text-neutral-300">|</span>
+                <span className="hidden sm:inline text-neutral-500">
+                  <span className="font-semibold text-[#26A69A]">
+                    {stats.utilisateurs}
+                  </span>{" "}
+                  utilisateurs
+                </span>
+                <span className="hidden md:inline text-neutral-300">|</span>
+                <span className="hidden md:inline text-neutral-500">
+                  <span className="font-semibold text-[#F9A825]">
+                    {stats.contributeurs}
+                  </span>{" "}
+                  contributeurs
+                </span>
+                <span className="hidden md:inline text-neutral-300">|</span>
+                <span className="hidden md:inline text-neutral-500">
+                  <span className="font-semibold text-[#7C3AED]">
+                    {stats.partenaires}
+                  </span>{" "}
+                  partenaires
+                </span>
+              </div>
+
+              {/* Right: Search */}
+              <div className="relative w-full lg:w-auto">
                 <input
                   type="text"
-                  placeholder="Rechercher un membre, secteur, localisation..."
+                  placeholder="Rechercher un membre..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full lg:w-64 pl-4 pr-10 py-2 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               </div>
+            </div>
+          </div>
+        </div>
 
+        {/* Filters */}
+        <div className="bg-neutral-50 border-b border-neutral-100">
+          <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12 py-6">
+            <p className="text-sm font-bold text-neutral-900 mb-4 uppercase tracking-wide">
+              Filtrer
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
               {/* Type Filter */}
               <div className="relative">
                 <select
@@ -314,7 +336,7 @@ export default function MembresPage() {
                   onChange={(e) =>
                     setSelectedType(e.target.value as MemberType | "all")
                   }
-                  className="appearance-none pl-4 pr-10 py-2.5 bg-neutral-50 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer min-w-[180px]"
+                  className="appearance-none w-full sm:w-44 px-3 sm:px-4 py-2.5 pr-8 sm:pr-10 border border-neutral-200 rounded-md text-xs sm:text-sm bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent cursor-pointer"
                 >
                   {MEMBER_TYPES.map((type) => (
                     <option key={type.value} value={type.value}>
@@ -322,7 +344,7 @@ export default function MembresPage() {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                <ChevronRight className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 rotate-90 pointer-events-none" />
               </div>
 
               {/* Tier Filter */}
@@ -332,7 +354,7 @@ export default function MembresPage() {
                   onChange={(e) =>
                     setSelectedTier(e.target.value as Tier | "all")
                   }
-                  className="appearance-none pl-4 pr-10 py-2.5 bg-neutral-50 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer min-w-[150px]"
+                  className="appearance-none w-full sm:w-44 px-3 sm:px-4 py-2.5 pr-8 sm:pr-10 border border-neutral-200 rounded-md text-xs sm:text-sm bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent cursor-pointer"
                 >
                   {TIERS.map((tier) => (
                     <option key={tier.value} value={tier.value}>
@@ -340,266 +362,196 @@ export default function MembresPage() {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                <ChevronRight className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 rotate-90 pointer-events-none" />
               </div>
 
-              {/* Clear filters */}
-              {hasActiveFilters && (
+              {/* Results count */}
+              <div className="ml-auto text-sm text-neutral-600">
+                <span className="font-semibold text-neutral-900">
+                  {filteredMembers.length}
+                </span>{" "}
+                {filteredMembers.length > 1 ? "résultats" : "résultat"}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Members Grid */}
+        <section className="py-12 lg:py-16">
+          <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12">
+            {filteredMembers.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                {filteredMembers.map((member) => (
+                  <div key={member.id} className="group perspective-1000">
+                    <div className="relative w-full h-full transition-transform duration-500 transform-style-3d group-hover:rotate-y-180">
+                      {/* Front - Logo + Nom */}
+                      <div className="backface-hidden bg-white rounded-md border border-neutral-200 overflow-hidden shadow-sm group-hover:shadow-md transition-shadow">
+                        {/* Zone Logo */}
+                        <div className="aspect-[4/3] flex items-center justify-center p-6 bg-white">
+                          {member.type === "Contributeur" && member.avatar ? (
+                            <div className="relative w-28 h-28 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-neutral-100">
+                              <Image
+                                src={member.avatar}
+                                alt={member.name}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
+                          ) : member.logo ? (
+                            <div className="relative w-full h-full max-h-28 sm:max-h-24">
+                              <Image
+                                src={member.logo}
+                                alt={member.name}
+                                fill
+                                className="object-contain"
+                              />
+                            </div>
+                          ) : (
+                            <div
+                              className="w-24 h-24 sm:w-20 sm:h-20 rounded-md flex items-center justify-center"
+                              style={{
+                                backgroundColor: `${TYPE_COLORS[member.type]}10`,
+                              }}
+                            >
+                              <Building2
+                                className="w-12 h-12 sm:w-10 sm:h-10"
+                                style={{ color: TYPE_COLORS[member.type] }}
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Nom */}
+                        <div className="px-4 py-3 border-t border-neutral-100 bg-neutral-50">
+                          <h3 className="font-semibold text-neutral-800 text-center text-sm sm:text-xs md:text-sm uppercase tracking-wide line-clamp-1">
+                            {member.name}
+                          </h3>
+                        </div>
+                      </div>
+
+                      {/* Back - Informations */}
+                      <div className="absolute inset-0 backface-hidden rotate-y-180">
+                        <div
+                          className="w-full h-full rounded-md p-5 sm:p-4 flex flex-col text-white"
+                          style={{ backgroundColor: TYPE_COLORS[member.type] }}
+                        >
+                          {/* Header */}
+                          <h3 className="font-bold text-base sm:text-sm line-clamp-2 mb-2">
+                            {member.name}
+                          </h3>
+
+                          {/* Badge type */}
+                          <span className="inline-block self-start px-2 py-0.5 bg-white/20 text-white text-xs sm:text-[10px] font-medium rounded mb-2">
+                            {member.type}
+                          </span>
+
+                          {/* Location */}
+                          <div className="flex items-center gap-1.5 text-white/80 text-sm sm:text-xs mb-3 sm:mb-2">
+                            <MapPin className="w-4 h-4 sm:w-3 sm:h-3 flex-shrink-0" />
+                            <span className="truncate">{member.location}</span>
+                          </div>
+
+                          {/* Description */}
+                          <p className="text-white/90 text-sm sm:text-xs line-clamp-4 sm:line-clamp-3 mb-auto">
+                            {member.description}
+                          </p>
+
+                          {/* Sector/Expertise */}
+                          {member.sector && (
+                            <span className="inline-block self-start px-2 py-1 bg-white/20 text-white text-xs sm:text-[10px] rounded mt-2 mb-2">
+                              {member.sector}
+                            </span>
+                          )}
+                          {member.expertise && member.expertise.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 sm:gap-1 mt-2 mb-2">
+                              {member.expertise.slice(0, 3).map((exp, i) => (
+                                <span
+                                  key={i}
+                                  className="px-2 py-1 sm:py-0.5 bg-white/20 text-white text-xs sm:text-[10px] rounded"
+                                >
+                                  {exp}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* CTA */}
+                          <div className="mt-3">
+                            {member.type === "Contributeur" ? (
+                              <a
+                                href={
+                                  member.linkedin
+                                    ? `https://linkedin.com/in/${member.linkedin}`
+                                    : "#"
+                                }
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-3 sm:py-2 bg-white text-[#0077B5] text-sm sm:text-xs font-medium rounded-md hover:bg-white/90 transition-colors"
+                              >
+                                <Linkedin className="w-5 h-5 sm:w-4 sm:h-4" />
+                                Voir le profil
+                              </a>
+                            ) : (
+                              <a
+                                href={member.website || "#"}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-3 sm:py-2 bg-white text-neutral-800 text-sm sm:text-xs font-medium rounded-md hover:bg-white/90 transition-colors"
+                              >
+                                <Globe className="w-5 h-5 sm:w-4 sm:h-4" />
+                                Visiter le site
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white rounded-md border border-neutral-100 p-12 text-center">
+                <Users className="w-16 h-16 text-neutral-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-neutral-900 mb-2">
+                  Aucun membre trouvé
+                </h3>
+                <p className="text-neutral-600 mb-4">
+                  Essayez de modifier vos critères de recherche
+                </p>
                 <button
                   onClick={clearFilters}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary-500 text-white text-sm font-medium rounded-md hover:bg-primary-600 transition-colors"
                 >
-                  <X className="w-4 h-4" />
-                  Effacer
+                  Réinitialiser les filtres
                 </button>
-              )}
-            </div>
-
-            {/* Active filters tags */}
-            {hasActiveFilters && (
-              <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-neutral-100">
-                <span className="text-sm text-neutral-500">
-                  Filtres actifs :
-                </span>
-                {selectedType !== "all" && (
-                  <span
-                    className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md text-white"
-                    style={{ backgroundColor: TYPE_COLORS[selectedType] }}
-                  >
-                    {MEMBER_TYPES.find((t) => t.value === selectedType)?.label}
-                    <button onClick={() => setSelectedType("all")}>
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                )}
-                {selectedTier !== "all" && (
-                  <span
-                    className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md text-white"
-                    style={{ backgroundColor: TIER_COLORS[selectedTier] }}
-                  >
-                    {selectedTier}
-                    <button onClick={() => setSelectedTier("all")}>
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                )}
-                {searchQuery && (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-neutral-200 text-neutral-700">
-                    &quot;{searchQuery}&quot;
-                    <button onClick={() => setSearchQuery("")}>
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                )}
               </div>
             )}
-          </motion.div>
 
-          {/* Results count */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-            className="mb-6"
-          >
-            <p className="text-sm text-neutral-600">
-              <span className="font-semibold text-neutral-900">
-                {filteredMembers.length}
-              </span>{" "}
-              {filteredMembers.length > 1 ? "membres trouvés" : "membre trouvé"}
-            </p>
-          </motion.div>
+            {/* CTA Join */}
+            <div className="mt-16 relative overflow-hidden bg-gradient-to-r from-primary-600 to-accent-500 rounded-md p-8 md:p-12 text-white text-center">
+              <div className="absolute -top-10 -right-10 w-40 h-40 border-[20px] border-white/10 rounded-full" />
+              <div className="absolute -bottom-20 -left-20 w-60 h-60 border-[30px] border-white/10 rounded-full" />
 
-          {/* Members Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-            {filteredMembers.map((member, index) => (
-              <motion.div
-                key={member.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-                className="group perspective-1000"
-              >
-                <div className="relative w-full h-full transition-transform duration-500 transform-style-3d group-hover:rotate-y-180">
-                  {/* Front - Logo + Nom */}
-                  <div className="backface-hidden bg-white rounded-md border border-neutral-200 overflow-hidden shadow-sm group-hover:shadow-md transition-shadow">
-                    {/* Zone Logo */}
-                    <div className="aspect-[4/3] sm:aspect-[4/3] flex items-center justify-center p-6 sm:p-6 bg-white">
-                      {member.type === "Contributeur" && member.avatar ? (
-                        <div className="relative w-28 h-28 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-neutral-100">
-                          <Image
-                            src={member.avatar}
-                            alt={member.name}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                      ) : member.logo ? (
-                        <div className="relative w-full h-full max-h-28 sm:max-h-24">
-                          <Image
-                            src={member.logo}
-                            alt={member.name}
-                            fill
-                            className="object-contain"
-                          />
-                        </div>
-                      ) : (
-                        <div
-                          className="w-24 h-24 sm:w-20 sm:h-20 rounded-md flex items-center justify-center"
-                          style={{
-                            backgroundColor: `${TYPE_COLORS[member.type]}10`,
-                          }}
-                        >
-                          <Building2
-                            className="w-12 h-12 sm:w-10 sm:h-10"
-                            style={{ color: TYPE_COLORS[member.type] }}
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Nom */}
-                    <div className="px-4 py-3 border-t border-neutral-100 bg-neutral-50">
-                      <h3 className="font-semibold text-neutral-800 text-center text-sm sm:text-xs md:text-sm uppercase tracking-wide line-clamp-1">
-                        {member.name}
-                      </h3>
-                    </div>
-                  </div>
-
-                  {/* Back - Informations */}
-                  <div className="absolute inset-0 backface-hidden rotate-y-180">
-                    <div
-                      className="w-full h-full rounded-md p-5 sm:p-4 flex flex-col text-white"
-                      style={{ backgroundColor: TYPE_COLORS[member.type] }}
-                    >
-                      {/* Header */}
-                      <h3 className="font-bold text-base sm:text-sm line-clamp-2 mb-2">
-                        {member.name}
-                      </h3>
-
-                      {/* Badge type */}
-                      <span className="inline-block self-start px-2 py-0.5 bg-white/20 text-white text-xs sm:text-[10px] font-medium rounded mb-2">
-                        {member.type}
-                      </span>
-
-                      {/* Location */}
-                      <div className="flex items-center gap-1.5 text-white/80 text-sm sm:text-xs mb-3 sm:mb-2">
-                        <MapPin className="w-4 h-4 sm:w-3 sm:h-3 flex-shrink-0" />
-                        <span className="truncate">{member.location}</span>
-                      </div>
-
-                      {/* Description */}
-                      <p className="text-white/90 text-sm sm:text-xs line-clamp-4 sm:line-clamp-3 mb-auto">
-                        {member.description}
-                      </p>
-
-                      {/* Sector/Expertise - visible on mobile */}
-                      {member.sector && (
-                        <span className="inline-block self-start px-2 py-1 bg-white/20 text-white text-xs sm:text-[10px] rounded mt-2 mb-2">
-                          {member.sector}
-                        </span>
-                      )}
-                      {member.expertise && member.expertise.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 sm:gap-1 mt-2 mb-2">
-                          {member.expertise.slice(0, 3).map((exp, i) => (
-                            <span
-                              key={i}
-                              className="px-2 py-1 sm:py-0.5 bg-white/20 text-white text-xs sm:text-[10px] rounded"
-                            >
-                              {exp}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* CTA */}
-                      <div className="mt-3">
-                        {member.type === "Contributeur" ? (
-                          <a
-                            href={
-                              member.linkedin
-                                ? `https://linkedin.com/in/${member.linkedin}`
-                                : "#"
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-3 sm:py-2 bg-white text-[#0077B5] text-sm sm:text-xs font-medium rounded-md hover:bg-white/90 transition-colors"
-                          >
-                            <Linkedin className="w-5 h-5 sm:w-4 sm:h-4" />
-                            Voir le profil LinkedIn
-                          </a>
-                        ) : (
-                          <a
-                            href={member.website || "#"}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-3 sm:py-2 bg-white text-neutral-800 text-sm sm:text-xs font-medium rounded-md hover:bg-white/90 transition-colors"
-                          >
-                            <Globe className="w-5 h-5 sm:w-4 sm:h-4" />
-                            Visiter le site web
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Empty state */}
-          {filteredMembers.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-md border border-neutral-100 p-12 text-center"
-            >
-              <Users className="w-16 h-16 text-neutral-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-neutral-900 mb-2">
-                Aucun membre trouvé
-              </h3>
-              <p className="text-neutral-600 mb-4">
-                Essayez de modifier vos critères de recherche
-              </p>
-              <button
-                onClick={clearFilters}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-500 text-white text-sm font-medium rounded-md hover:bg-primary-600 transition-colors"
-              >
-                Réinitialiser les filtres
-              </button>
-            </motion.div>
-          )}
-
-          {/* CTA Join */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="mt-16 relative overflow-hidden bg-gradient-to-r from-primary-600 to-accent-500 rounded-md p-8 md:p-12 text-white text-center"
-          >
-            <div className="absolute -top-10 -right-10 w-40 h-40 border-[20px] border-white/10 rounded-full" />
-            <div className="absolute -bottom-20 -left-20 w-60 h-60 border-[30px] border-white/10 rounded-full" />
-
-            <div className="relative z-10">
-              <h2 className="text-2xl md:text-3xl font-bold mb-4">
-                Rejoignez la communauté imo2tun
-              </h2>
-              <p className="text-white/80 max-w-xl mx-auto mb-6">
-                Faites partie de l&apos;écosystème numérique africain et
-                bénéficiez d&apos;avantages exclusifs selon votre profil.
-              </p>
-              <Link
-                href="/adherer"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-white text-primary-600 font-semibold rounded-md hover:bg-white/90 transition-colors"
-              >
-                Devenir membre
-                <ExternalLink className="w-5 h-5" />
-              </Link>
+              <div className="relative z-10">
+                <h2 className="text-2xl md:text-3xl font-bold mb-4">
+                  Rejoignez la communauté imo2tun
+                </h2>
+                <p className="text-white/80 max-w-xl mx-auto mb-6">
+                  Faites partie de l&apos;écosystème numérique africain et
+                  bénéficiez d&apos;avantages exclusifs selon votre profil.
+                </p>
+                <Link
+                  href="/membership"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-white text-primary-600 font-semibold rounded-md hover:bg-white/90 transition-colors"
+                >
+                  Devenir membre
+                  <ExternalLink className="w-5 h-5" />
+                </Link>
+              </div>
             </div>
-          </motion.div>
-        </div>
-      </main>
+          </div>
+        </section>
+      </div>
     </>
   );
 }
