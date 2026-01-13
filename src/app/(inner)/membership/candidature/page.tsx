@@ -21,34 +21,12 @@ import { Button } from "@/components/ui";
 
 // Data
 import { memberTypes, membershipTiers } from "@/lib/data/membership";
+import { COUNTRIES, PROFESSIONS } from "@/lib/data";
 
 // Types
 type MemberTypeId = "offreur" | "utilisateur" | "contributeur" | "partenaire";
 type TierId = "asuka" | "sunun" | "mindaho" | "dah";
 type Duration = 1 | 2 | 5;
-
-// Liste des pays
-const COUNTRIES = [
-  "Bénin",
-  "Burkina Faso",
-  "Cameroun",
-  "Canada",
-  "Côte d'Ivoire",
-  "France",
-  "Gabon",
-  "Ghana",
-  "Guinée",
-  "Mali",
-  "Maroc",
-  "Niger",
-  "Nigeria",
-  "République Démocratique du Congo",
-  "Sénégal",
-  "Suisse",
-  "Togo",
-  "Tunisie",
-  "Autre",
-];
 
 interface FormData {
   // Adhésion (en premier)
@@ -622,8 +600,8 @@ function CandidaturePageContent() {
                       >
                         <option value="">Sélectionner un pays</option>
                         {COUNTRIES.map((country) => (
-                          <option key={country} value={country}>
-                            {country}
+                          <option key={country.code} value={country.name}>
+                            {country.flag} {country.name}
                           </option>
                         ))}
                       </select>
@@ -731,15 +709,21 @@ function CandidaturePageContent() {
                     <label className="block text-sm font-medium text-neutral-700 mb-1.5">
                       Fonction<span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
+                    <select
                       required
                       value={formData.referent.fonction}
                       onChange={(e) =>
                         handleReferentChange("fonction", e.target.value)
                       }
                       className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
-                    />
+                    >
+                      <option value="">Sélectionner une fonction</option>
+                      {PROFESSIONS.map((profession) => (
+                        <option key={profession} value={profession}>
+                          {profession}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 ) : (
                   <div className="md:col-span-3">
@@ -846,8 +830,8 @@ function CandidaturePageContent() {
                   >
                     <option value="">Sélectionner un pays</option>
                     {COUNTRIES.map((country) => (
-                      <option key={country} value={country}>
-                        {country}
+                      <option key={country.code} value={country.name}>
+                        {country.flag} {country.name}
                       </option>
                     ))}
                   </select>
@@ -981,8 +965,8 @@ function CandidaturePageContent() {
                   >
                     <option value="">Sélectionner un pays</option>
                     {COUNTRIES.map((country) => (
-                      <option key={country} value={country}>
-                        {country}
+                      <option key={country.code} value={country.name}>
+                        {country.flag} {country.name}
                       </option>
                     ))}
                   </select>
@@ -1099,6 +1083,9 @@ function CandidaturePageContent() {
           </form>
         </div>
       </section>
+
+      {/* Newsletter */}
+      <NewsletterBanner />
     </>
   );
 }
