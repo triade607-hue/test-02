@@ -6,20 +6,18 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { ChevronLeft, Mail, Check, ArrowRight } from "lucide-react";
 
+// Hook d'authentification
+import { usePasswordReset } from "@/hooks";
+
 export default function ForgotPasswordPage() {
+  const { step, isLoading, error, successMessage, requestReset } =
+    usePasswordReset();
+
   const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-
-    // Simulation d'envoi d'email
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    setIsSubmitting(false);
-    setIsSuccess(true);
+    await requestReset(email);
   };
 
   return (
@@ -102,7 +100,7 @@ export default function ForgotPasswordPage() {
 
           {/* Form */}
           <div className="flex-1 px-6 py-6 md:px-8 md:pb-8 md:pt-6">
-            {isSuccess ? (
+            {step === "email-sent" ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -115,7 +113,8 @@ export default function ForgotPasswordPage() {
                   Email envoyé !
                 </h3>
                 <p className="text-neutral-600 text-center mb-2">
-                  Un lien de réinitialisation a été envoyé à :
+                  {successMessage ||
+                    "Un lien de réinitialisation a été envoyé à :"}
                 </p>
                 <p className="text-primary-600 font-medium mb-6">{email}</p>
                 <p className="text-sm text-neutral-500 text-center mb-6">
@@ -137,6 +136,13 @@ export default function ForgotPasswordPage() {
                   vous enverrons un lien pour créer un nouveau mot de passe.
                 </p>
 
+                {/* Message d'erreur */}
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+                    {error}
+                  </div>
+                )}
+
                 {/* Email */}
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1.5">
@@ -156,10 +162,10 @@ export default function ForgotPasswordPage() {
                 <div className="pt-2">
                   <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isLoading}
                     className="w-full px-5 py-3 bg-primary-600 text-white text-sm font-semibold rounded-md hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    {isSubmitting ? (
+                    {isLoading ? (
                       <span className="flex items-center justify-center gap-2">
                         <svg
                           className="animate-spin w-4 h-4"

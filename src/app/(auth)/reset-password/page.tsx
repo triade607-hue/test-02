@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ChevronLeft,
@@ -11,18 +12,25 @@ import {
   EyeOff,
   Check,
   ShieldCheck,
+  AlertCircle,
 } from "lucide-react";
 
-export default function ResetPasswordPage() {
+// Hook d'authentification
+import { usePasswordReset } from "@/hooks";
+
+function ResetPasswordContent() {
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token") || "";
+
+  const { step, isLoading, error, successMessage, submitNewPassword } =
+    usePasswordReset(token);
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     password: "",
     confirmPassword: "",
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [error, setError] = useState("");
 
   // Validation du mot de passe
   const passwordChecks = {
@@ -44,30 +52,46 @@ export default function ResetPasswordPage() {
       ...prev,
       [name]: value,
     }));
-    setError("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!isPasswordValid) {
-      setError("Le mot de passe ne respecte pas les critères de sécurité.");
+    if (!isPasswordValid || !passwordsMatch) {
       return;
     }
 
-    if (!passwordsMatch) {
-      setError("Les mots de passe ne correspondent pas.");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    // Simulation de réinitialisation
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    setIsSubmitting(false);
-    setIsSuccess(true);
+    await submitNewPassword(token, formData.password);
   };
+
+  // Si pas de token, afficher une erreur
+  if (!token) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-100 p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          className="w-full max-w-md bg-white rounded-md shadow-2xl p-8 text-center"
+        >
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-8 h-8 text-red-500" />
+          </div>
+          <h2 className="text-xl font-bold text-neutral-900 mb-2">
+            Lien invalide
+          </h2>
+          <p className="text-neutral-600 mb-6">
+            Le lien de réinitialisation est invalide ou a expiré.
+          </p>
+          <Link
+            href="/forgot-password"
+            className="inline-block px-6 py-2.5 bg-primary-600 text-white text-sm font-semibold rounded-md hover:bg-primary-700 transition-colors"
+          >
+            Demander un nouveau lien
+          </Link>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-100 p-4">
@@ -94,7 +118,7 @@ export default function ResetPasswordPage() {
           </motion.div>
 
           {/* Overlay */}
-          <div className="absolute inset-0 bg-primary-600/95" />
+          <div className="absolute inset-0 bg-accent-500/95" />
 
           {/* Cercles décoratifs */}
           <div className="absolute -top-20 -right-20 w-64 h-64 border-[30px] border-white/10 rounded-full" />
@@ -113,20 +137,15 @@ export default function ResetPasswordPage() {
 
             {/* Contenu centré */}
             <div className="flex-1 flex flex-col items-center justify-center">
-              {/* Icône */}
               <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-6">
                 <Lock className="w-8 h-8 text-white" />
               </div>
-
-              {/* Titre */}
               <h3 className="text-2xl font-bold text-center mb-4">
                 Nouveau mot de passe
               </h3>
-
-              {/* Description */}
               <p className="text-white/80 text-center text-sm max-w-xs">
-                Choisissez un mot de passe fort et unique pour sécuriser votre
-                compte imo2tun.
+                Créez un nouveau mot de passe sécurisé pour protéger votre
+                compte.
               </p>
             </div>
           </div>
@@ -149,7 +168,7 @@ export default function ResetPasswordPage() {
 
           {/* Form */}
           <div className="flex-1 overflow-y-auto px-6 py-6 md:px-8 md:pb-8 md:pt-6">
-            {isSuccess ? (
+            {step === "success" ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -162,7 +181,8 @@ export default function ResetPasswordPage() {
                   Mot de passe modifié !
                 </h3>
                 <p className="text-neutral-600 text-center mb-6">
-                  Votre mot de passe a été réinitialisé avec succès.
+                  {successMessage ||
+                    "Votre mot de passe a été réinitialisé avec succès."}
                   <br />
                   Vous pouvez maintenant vous connecter.
                 </p>
@@ -195,7 +215,7 @@ export default function ResetPasswordPage() {
                       value={formData.password}
                       onChange={handleChange}
                       required
-                      placeholder="Entrez votre nouveau mot de passe"
+                      placeholder="••••••••"
                       className="w-full px-4 py-2.5 pr-12 bg-white border border-neutral-200 rounded-md text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                     />
                     <button
@@ -213,73 +233,40 @@ export default function ResetPasswordPage() {
                 </div>
 
                 {/* Password strength indicators */}
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-neutral-600">
-                    Le mot de passe doit contenir :
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div
-                      className={`flex items-center gap-2 text-xs ${
-                        passwordChecks.length
-                          ? "text-accent-600"
-                          : "text-neutral-400"
-                      }`}
-                    >
-                      <Check
-                        className={`w-3.5 h-3.5 ${passwordChecks.length ? "opacity-100" : "opacity-30"}`}
-                      />
-                      Au moins 8 caractères
-                    </div>
-                    <div
-                      className={`flex items-center gap-2 text-xs ${
-                        passwordChecks.uppercase
-                          ? "text-accent-600"
-                          : "text-neutral-400"
-                      }`}
-                    >
-                      <Check
-                        className={`w-3.5 h-3.5 ${passwordChecks.uppercase ? "opacity-100" : "opacity-30"}`}
-                      />
-                      Une majuscule
-                    </div>
-                    <div
-                      className={`flex items-center gap-2 text-xs ${
-                        passwordChecks.lowercase
-                          ? "text-accent-600"
-                          : "text-neutral-400"
-                      }`}
-                    >
-                      <Check
-                        className={`w-3.5 h-3.5 ${passwordChecks.lowercase ? "opacity-100" : "opacity-30"}`}
-                      />
-                      Une minuscule
-                    </div>
-                    <div
-                      className={`flex items-center gap-2 text-xs ${
-                        passwordChecks.number
-                          ? "text-accent-600"
-                          : "text-neutral-400"
-                      }`}
-                    >
-                      <Check
-                        className={`w-3.5 h-3.5 ${passwordChecks.number ? "opacity-100" : "opacity-30"}`}
-                      />
-                      Un chiffre
-                    </div>
-                    <div
-                      className={`flex items-center gap-2 text-xs ${
-                        passwordChecks.special
-                          ? "text-accent-600"
-                          : "text-neutral-400"
-                      }`}
-                    >
-                      <Check
-                        className={`w-3.5 h-3.5 ${passwordChecks.special ? "opacity-100" : "opacity-30"}`}
-                      />
-                      Un caractère spécial
+                {formData.password && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-neutral-500 font-medium">
+                      Le mot de passe doit contenir :
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { key: "length", label: "8 caractères minimum" },
+                        { key: "uppercase", label: "Une majuscule" },
+                        { key: "lowercase", label: "Une minuscule" },
+                        { key: "number", label: "Un chiffre" },
+                        { key: "special", label: "Un caractère spécial" },
+                      ].map(({ key, label }) => (
+                        <div
+                          key={key}
+                          className={`flex items-center gap-1.5 text-xs ${
+                            passwordChecks[key as keyof typeof passwordChecks]
+                              ? "text-accent-600"
+                              : "text-neutral-400"
+                          }`}
+                        >
+                          <Check
+                            className={`w-3.5 h-3.5 ${
+                              passwordChecks[key as keyof typeof passwordChecks]
+                                ? "text-accent-500"
+                                : "text-neutral-300"
+                            }`}
+                          />
+                          {label}
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Confirmer mot de passe */}
                 <div>
@@ -294,7 +281,7 @@ export default function ResetPasswordPage() {
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       required
-                      placeholder="Confirmez votre mot de passe"
+                      placeholder="••••••••"
                       className={`w-full px-4 py-2.5 pr-12 bg-white border rounded-md text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${
                         formData.confirmPassword && !passwordsMatch
                           ? "border-red-300"
@@ -334,12 +321,10 @@ export default function ResetPasswordPage() {
                 <div className="pt-2">
                   <button
                     type="submit"
-                    disabled={
-                      isSubmitting || !isPasswordValid || !passwordsMatch
-                    }
+                    disabled={isLoading || !isPasswordValid || !passwordsMatch}
                     className="w-full px-5 py-3 bg-primary-600 text-white text-sm font-semibold rounded-md hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSubmitting ? (
+                    {isLoading ? (
                       <span className="flex items-center justify-center gap-2">
                         <svg
                           className="animate-spin w-4 h-4"
@@ -373,5 +358,19 @@ export default function ResetPasswordPage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-neutral-100">
+          <div className="animate-spin w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full" />
+        </div>
+      }
+    >
+      <ResetPasswordContent />
+    </Suspense>
   );
 }

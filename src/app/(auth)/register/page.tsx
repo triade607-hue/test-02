@@ -4,23 +4,29 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { ChevronLeft, Check, ChevronDown } from "lucide-react";
+import { ChevronLeft, Check, ChevronDown, Mail } from "lucide-react";
+
+// Hook d'authentification
+import { useRegister } from "@/hooks";
+
+// Data
 import { PROFESSIONS, COUNTRIES } from "@/lib/data";
 
 export default function RegisterPage() {
+  const { step, isLoading, error, successMessage, submitRegistration } =
+    useRegister();
+
   const [formData, setFormData] = useState({
     lastName: "",
     firstName: "",
     email: "",
     profession: "",
     customProfession: "",
-    dialCode: "+229",
+    countryCode: "+229",
     phone: "",
-    acceptTerms: false,
-    acceptCommunications: false,
+    acceptCondition: false,
+    acceptCommunication: false,
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -35,24 +41,23 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
-    // Si "Autre" est sélectionné, utiliser customProfession comme profession
+    // Si "Autre" est sélectionné, utiliser customProfession
     const finalProfession =
       formData.profession === "Autre"
         ? formData.customProfession
         : formData.profession;
 
-    const dataToSubmit = {
-      ...formData,
+    await submitRegistration({
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+      countryCode: formData.countryCode,
       profession: finalProfession,
-    };
-
-    console.log("Data to submit:", dataToSubmit);
-
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSubmitting(false);
-    setIsSuccess(true);
+      acceptCondition: formData.acceptCondition,
+      acceptCommunication: formData.acceptCommunication,
+    });
   };
 
   return (
@@ -99,28 +104,30 @@ export default function RegisterPage() {
 
             {/* Contenu centré */}
             <div className="flex-1 flex flex-col items-center justify-center">
-              {/* Titre */}
-              <h3 className="text-2xl font-bold text-center mb-4">
-                Rejoignez l&apos;aventure !
-              </h3>
-
-              {/* Description */}
-              <p className="text-white/80 text-center text-sm max-w-xs mb-6">
-                Créez votre compte et rejoignez la communauté imo2tun pour
-                construire ensemble l&apos;écosystème numérique africain.
-              </p>
-
-              {/* Stats */}
-              <div className="flex gap-6 text-center">
-                <div>
-                  <span className="block text-2xl font-bold">500+</span>
-                  <span className="text-white/60 text-xs">Membres</span>
-                </div>
-                <div>
-                  <span className="block text-2xl font-bold">50+</span>
-                  <span className="text-white/60 text-xs">Événements</span>
-                </div>
-              </div>
+              {step === "success" ? (
+                <>
+                  <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-6">
+                    <Mail className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-center mb-4">
+                    Vérifiez votre email !
+                  </h3>
+                  <p className="text-white/80 text-center text-sm max-w-xs">
+                    Un email de confirmation a été envoyé. Cliquez sur le lien
+                    pour activer votre compte.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-2xl font-bold text-center mb-4">
+                    Rejoignez l&apos;aventure !
+                  </h3>
+                  <p className="text-white/80 text-center text-sm max-w-xs">
+                    Créez votre compte pour accéder à toutes les ressources et
+                    rejoindre la communauté imo2tun.
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -130,7 +137,7 @@ export default function RegisterPage() {
           {/* Header */}
           <div className="sticky top-0 z-10 bg-white border-b border-neutral-100 md:border-none px-6 py-4 md:px-8 md:pt-8 md:pb-0 flex items-center justify-between">
             <h2 className="text-xl md:text-2xl font-bold text-neutral-900">
-              Créer un compte
+              {step === "success" ? "Inscription réussie" : "Créer un compte"}
             </h2>
             <Link
               href="/"
@@ -142,7 +149,7 @@ export default function RegisterPage() {
 
           {/* Form */}
           <div className="flex-1 overflow-y-auto px-6 py-6 md:px-8 md:pb-8 md:pt-6">
-            {isSuccess ? (
+            {step === "success" ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -152,10 +159,11 @@ export default function RegisterPage() {
                   <Check className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-neutral-900 mb-2">
-                  Compte créé avec succès !
+                  Inscription réussie !
                 </h3>
                 <p className="text-neutral-600 text-center mb-6">
-                  Vérifiez votre email pour activer votre compte.
+                  {successMessage ||
+                    "Vérifiez votre email pour activer votre compte."}
                 </p>
                 <Link
                   href="/login"
@@ -166,6 +174,13 @@ export default function RegisterPage() {
               </motion.div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
+                {/* Message d'erreur */}
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+                    {error}
+                  </div>
+                )}
+
                 {/* Nom & Prénom */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -207,6 +222,7 @@ export default function RegisterPage() {
                     value={formData.email}
                     onChange={handleChange}
                     required
+                    placeholder="vous@exemple.com"
                     className="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-md text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                   />
                 </div>
@@ -222,9 +238,9 @@ export default function RegisterPage() {
                       value={formData.profession}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-md text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none cursor-pointer"
+                      className="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-md text-neutral-900 appearance-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                     >
-                      <option value="">Sélectionnez votre profession</option>
+                      <option value="">Sélectionner</option>
                       {PROFESSIONS.map((profession) => (
                         <option key={profession} value={profession}>
                           {profession}
@@ -235,7 +251,7 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                {/* Champ personnalisé si "Autre" est sélectionné */}
+                {/* Custom Profession (if "Autre" selected) */}
                 {formData.profession === "Autre" && (
                   <div>
                     <label className="block text-sm font-medium text-neutral-700 mb-1.5">
@@ -248,7 +264,6 @@ export default function RegisterPage() {
                       value={formData.customProfession}
                       onChange={handleChange}
                       required
-                      placeholder="Votre profession"
                       className="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-md text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                     />
                   </div>
@@ -257,17 +272,15 @@ export default function RegisterPage() {
                 {/* Téléphone */}
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1.5">
-                    Numéro de téléphone
-                    <span className="text-secondary-500">*</span>
+                    Téléphone<span className="text-secondary-500">*</span>
                   </label>
                   <div className="flex gap-2">
-                    {/* Sélecteur de pays */}
-                    <div className="relative w-[120px] flex-shrink-0">
+                    <div className="relative w-32">
                       <select
-                        name="dialCode"
-                        value={formData.dialCode}
+                        name="countryCode"
+                        value={formData.countryCode}
                         onChange={handleChange}
-                        className="w-full px-3 py-2.5 bg-white border border-neutral-200 rounded-md text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none cursor-pointer text-sm"
+                        className="w-full px-3 py-2.5 bg-white border border-neutral-200 rounded-md text-neutral-900 appearance-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-sm"
                       >
                         {COUNTRIES.map((country) => (
                           <option key={country.code} value={country.dialCode}>
@@ -277,8 +290,6 @@ export default function RegisterPage() {
                       </select>
                       <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
                     </div>
-
-                    {/* Numéro */}
                     <input
                       type="tel"
                       name="phone"
@@ -291,56 +302,48 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                {/* Checkbox CGU */}
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    id="acceptTerms"
-                    name="acceptTerms"
-                    checked={formData.acceptTerms}
-                    onChange={handleChange}
-                    required
-                    className="mt-0.5 w-4 h-4 text-primary-600 border-neutral-300 rounded-md focus:ring-primary-500"
-                  />
-                  <label
-                    htmlFor="acceptTerms"
-                    className="text-sm text-neutral-600"
-                  >
-                    J&apos;accepte les{" "}
-                    <Link
-                      href="/cgu"
-                      className="text-primary-600 hover:underline"
-                    >
-                      conditions générales
-                    </Link>{" "}
-                    et la{" "}
-                    <Link
-                      href="/privacy"
-                      className="text-primary-600 hover:underline"
-                    >
-                      politique de confidentialité
-                    </Link>
-                    <span className="text-secondary-500">*</span>
+                {/* Checkboxes */}
+                <div className="space-y-3 pt-2">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="acceptCondition"
+                      checked={formData.acceptCondition}
+                      onChange={handleChange}
+                      required
+                      className="mt-0.5 w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+                    />
+                    <span className="text-sm text-neutral-600">
+                      J&apos;accepte les{" "}
+                      <Link
+                        href="/conditions-generales"
+                        className="text-primary-600 hover:underline"
+                      >
+                        conditions générales
+                      </Link>{" "}
+                      et la{" "}
+                      <Link
+                        href="/politique-confidentialite"
+                        className="text-primary-600 hover:underline"
+                      >
+                        politique de confidentialité
+                      </Link>
+                      <span className="text-secondary-500">*</span>
+                    </span>
                   </label>
-                </div>
 
-                {/* Checkbox communications */}
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    id="acceptCommunications"
-                    name="acceptCommunications"
-                    checked={formData.acceptCommunications}
-                    onChange={handleChange}
-                    className="mt-0.5 w-4 h-4 text-primary-600 border-neutral-300 rounded-md focus:ring-primary-500"
-                  />
-                  <label
-                    htmlFor="acceptCommunications"
-                    className="text-sm text-neutral-600"
-                  >
-                    J&apos;accepte de recevoir des{" "}
-                    <span className="text-primary-600">communications</span> de
-                    la part d&apos;imo2tun
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="acceptCommunication"
+                      checked={formData.acceptCommunication}
+                      onChange={handleChange}
+                      className="mt-0.5 w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+                    />
+                    <span className="text-sm text-neutral-600">
+                      J&apos;accepte de recevoir des communications marketing
+                      d&apos;imo2tun
+                    </span>
                   </label>
                 </div>
 
@@ -348,10 +351,10 @@ export default function RegisterPage() {
                 <div className="pt-2">
                   <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isLoading}
                     className="w-full px-5 py-3 bg-primary-600 text-white text-sm font-semibold rounded-md hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSubmitting ? (
+                    {isLoading ? (
                       <span className="flex items-center justify-center gap-2">
                         <svg
                           className="animate-spin w-4 h-4"
