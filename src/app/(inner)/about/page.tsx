@@ -59,7 +59,7 @@ export default function AboutPage() {
                 <div className="space-y-4 text-neutral-600 leading-relaxed">
                   <p>
                     <strong className="text-[#0077B6]">Imo2tun</strong> est une
-                    association loi 1901 à but non lucratif qui se veut être
+                    association loi 1901 à but non lucratif qui se veut être une
                     académie de la connaissance.
                   </p>
                   <p>
