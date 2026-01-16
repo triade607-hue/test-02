@@ -4,6 +4,7 @@
 
 // Hook principal
 export { useAuth, default as useAuthHook } from "./use-auth";
+export { useProfile } from "./use-profile";
 
 // Hooks spécialisés
 export { useLogin, default as useLoginHook } from "./use-login";

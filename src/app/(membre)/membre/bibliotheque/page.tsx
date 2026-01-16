@@ -14,7 +14,7 @@ import {
   Lock,
   User,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/format-validation";
 
 // Mock data
 const MOCK_USER = {

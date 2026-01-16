@@ -10,7 +10,7 @@ import {
   Leaf,
   LucideIcon,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/format-validation";
 
 // Map des icônes
 const iconMap: Record<string, LucideIcon> = {

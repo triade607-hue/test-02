@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/format-validation";
 
 interface SectionTitleProps {
   title: string;

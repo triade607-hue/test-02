@@ -18,7 +18,7 @@ import {
   AlertTriangle,
   ChevronRight,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/format-validation";
 
 export default function ParametresPage() {
   const [showPassword, setShowPassword] = useState(false);

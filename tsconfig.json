@@ -19,7 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@/guards": ["./src/guards"],
+      "@/guards/*": ["./src/guards/*"]
     }
   },
   "include": [

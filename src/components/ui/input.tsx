@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/format-validation";
 import { forwardRef } from "react";
 
 export interface InputProps

@@ -18,7 +18,7 @@ import {
   TrendingUp,
   Crown,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/format-validation";
 
 // Mock user data
 const MOCK_USER = {

@@ -6,6 +6,7 @@
 // ============================================================
 
 export * from "./auth.types";
+export * from "./profile.types";
 
 export interface Event {
   id: string;
@@ -123,3 +124,4 @@ export interface TeamMember {
     linkedin?: string;
   };
 }
+
