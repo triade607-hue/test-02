@@ -4,18 +4,23 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { ChevronLeft, Check, ChevronDown, Mail } from "lucide-react";
+import { ChevronLeft, Check, ChevronDown, Mail, Loader2 } from "lucide-react";
 
-// Hook d'authentification
-import { useRegister } from "@/hooks";
+// Hooks d'authentification
+import { useRegister, useRedirectIfAuthenticated } from "@/hooks";
 
 // Data
 import { PROFESSIONS, COUNTRIES } from "@/lib/data";
 
 export default function RegisterPage() {
+  // ========== REDIRECTION SI DÉJÀ CONNECTÉ ==========
+  const { isCheckingAuth } = useRedirectIfAuthenticated();
+
+  // ========== HOOK D'INSCRIPTION ==========
   const { step, isLoading, error, successMessage, submitRegistration } =
     useRegister();
 
+  // ========== ÉTATS LOCAUX ==========
   const [formData, setFormData] = useState({
     lastName: "",
     firstName: "",
@@ -28,6 +33,7 @@ export default function RegisterPage() {
     acceptCommunication: false,
   });
 
+  // ========== HANDLERS ==========
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -60,6 +66,19 @@ export default function RegisterPage() {
     });
   };
 
+  // ========== LOADER VÉRIFICATION INITIALE ==========
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-100">
+        <div className="text-center">
+          <Loader2 className="w-10 h-10 animate-spin text-primary-600 mx-auto mb-4" />
+          <p className="text-neutral-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ========== RENDU ==========
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-100 p-4">
       <motion.div
@@ -375,33 +394,26 @@ export default function RegisterPage() {
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                           />
                         </svg>
-                        Création...
+                        Inscription...
                       </span>
                     ) : (
-                      "CRÉER MON COMPTE"
+                      "S'INSCRIRE"
                     )}
                   </button>
                 </div>
 
-                {/* Divider */}
-                <div className="relative py-2">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-neutral-200" />
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white text-neutral-500">
-                      Déjà membre ?
-                    </span>
-                  </div>
-                </div>
-
                 {/* Login Link */}
-                <Link
-                  href="/login"
-                  className="block w-full px-5 py-3 bg-white border-2 border-accent-500 text-accent-500 text-sm font-semibold rounded-md hover:bg-accent-500 hover:text-white transition-colors text-center"
-                >
-                  SE CONNECTER
-                </Link>
+                <div className="text-center pt-2">
+                  <span className="text-sm text-neutral-600">
+                    Déjà membre ?{" "}
+                    <Link
+                      href="/login"
+                      className="text-primary-600 hover:underline font-medium"
+                    >
+                      Se connecter
+                    </Link>
+                  </span>
+                </div>
               </form>
             )}
           </div>

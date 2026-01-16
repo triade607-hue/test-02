@@ -118,14 +118,14 @@ export async function login(
 /**
  * Déconnexion de l'utilisateur
  * Supprime les tokens stockés localement
+ *
+ * NOTE: Ne fait PAS de redirection - c'est le composant appelant
+ * qui doit gérer la redirection via router.push("/")
  */
 export function logout(): void {
   clearTokens();
-
-  // Rediriger vers la page d'accueil ou de login
-  if (typeof window !== "undefined") {
-    window.location.href = "/";
-  }
+  // NOTE: On ne fait plus de window.location.href ici
+  // La redirection est gérée par le composant qui appelle logout
 }
 
 // ==================== TOKEN ====================

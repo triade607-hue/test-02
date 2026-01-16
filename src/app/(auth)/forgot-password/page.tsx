@@ -4,22 +4,41 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { ChevronLeft, Mail, Check, ArrowRight } from "lucide-react";
+import { ChevronLeft, Mail, Check, ArrowRight, Loader2 } from "lucide-react";
 
-// Hook d'authentification
-import { usePasswordReset } from "@/hooks";
+// Hooks d'authentification
+import { usePasswordReset, useRedirectIfAuthenticated } from "@/hooks";
 
 export default function ForgotPasswordPage() {
+  // ========== REDIRECTION SI DÉJÀ CONNECTÉ ==========
+  const { isCheckingAuth } = useRedirectIfAuthenticated();
+
+  // ========== HOOK DE RESET PASSWORD ==========
   const { step, isLoading, error, successMessage, requestReset } =
     usePasswordReset();
 
+  // ========== ÉTATS LOCAUX ==========
   const [email, setEmail] = useState("");
 
+  // ========== HANDLERS ==========
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await requestReset(email);
   };
 
+  // ========== LOADER VÉRIFICATION INITIALE ==========
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-100">
+        <div className="text-center">
+          <Loader2 className="w-10 h-10 animate-spin text-primary-600 mx-auto mb-4" />
+          <p className="text-neutral-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ========== RENDU ==========
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-100 p-4">
       <motion.div

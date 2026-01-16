@@ -17,3 +17,9 @@ export {
   useSetupAccount,
   default as useSetupAccountHook,
 } from "./use-setup-account";
+
+// Hook de redirection (NOUVEAU)
+export {
+  useRedirectIfAuthenticated,
+  default as useRedirectIfAuthenticatedHook,
+} from "./use-redirect-if-authenticated";

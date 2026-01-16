@@ -3,15 +3,26 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, Eye, EyeOff, Mail, ArrowLeft } from "lucide-react";
+import {
+  ChevronLeft,
+  Eye,
+  EyeOff,
+  Mail,
+  ArrowLeft,
+  Loader2,
+} from "lucide-react";
 
-// Hook d'authentification
-import { useLogin } from "@/hooks";
+// Hooks d'authentification
+import { useLogin, useRedirectIfAuthenticated } from "@/hooks";
 
 export default function LoginPage() {
-  const router = useRouter();
+  // ========== REDIRECTION SI DÉJÀ CONNECTÉ ==========
+  // Ce hook gère automatiquement la redirection vers /membre
+  // après un login réussi (quand isAuthenticated devient true)
+  const { isCheckingAuth } = useRedirectIfAuthenticated();
+
+  // ========== HOOK DE LOGIN ==========
   const {
     step,
     isLoading,
@@ -23,7 +34,7 @@ export default function LoginPage() {
     reset,
   } = useLogin();
 
-  // États locaux pour les formulaires
+  // ========== ÉTATS LOCAUX ==========
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -32,6 +43,8 @@ export default function LoginPage() {
   });
   const [otpCode, setOtpCode] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
+
+  // ========== HANDLERS ==========
 
   // Gestion du changement des champs
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,8 +65,8 @@ export default function LoginPage() {
   const handleOTPSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await submitOTP(otpCode);
-    // La redirection est gérée dans le context après succès
-    router.push("/membre");
+    // NOTE: La redirection est gérée automatiquement par useRedirectIfAuthenticated
+    // quand isAuthenticated devient true après le login réussi
   };
 
   // Renvoi du code OTP
@@ -80,6 +93,21 @@ export default function LoginPage() {
     setOtpCode("");
   };
 
+  // ========== LOADER VÉRIFICATION INITIALE ==========
+  // Afficher un loader seulement pendant la vérification initiale de session
+  // PAS pendant les opérations de login (pour préserver l'état local)
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-100">
+        <div className="text-center">
+          <Loader2 className="w-10 h-10 animate-spin text-primary-600 mx-auto mb-4" />
+          <p className="text-neutral-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ========== RENDU ==========
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-100 p-4">
       <motion.div
@@ -230,7 +258,7 @@ export default function LoginPage() {
                         onChange={handleChange}
                         required
                         placeholder="••••••••"
-                        className="w-full px-4 py-2.5 pr-12 bg-white border border-neutral-200 rounded-md text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                        className="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-md text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all pr-12"
                       />
                       <button
                         type="button"
@@ -248,22 +276,18 @@ export default function LoginPage() {
 
                   {/* Remember + Forgot */}
                   <div className="flex items-center justify-between">
-                    <div className="flex items-start gap-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
-                        id="remember"
                         name="remember"
                         checked={formData.remember}
                         onChange={handleChange}
-                        className="mt-0.5 w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+                        className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
                       />
-                      <label
-                        htmlFor="remember"
-                        className="text-sm text-neutral-600"
-                      >
+                      <span className="text-sm text-neutral-600">
                         Se souvenir de moi
-                      </label>
-                    </div>
+                      </span>
+                    </label>
                     <Link
                       href="/forgot-password"
                       className="text-sm text-primary-600 hover:underline"
@@ -313,8 +337,8 @@ export default function LoginPage() {
                     <div className="absolute inset-0 flex items-center">
                       <div className="w-full border-t border-neutral-200" />
                     </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="px-4 bg-white text-neutral-500">
+                    <div className="relative flex justify-center">
+                      <span className="bg-white px-4 text-sm text-neutral-500">
                         Pas encore membre ?
                       </span>
                     </div>
