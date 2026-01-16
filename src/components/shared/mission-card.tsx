@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, GraduationCap, Users, Lightbulb } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/format-validation";
 import { useState } from "react";
 
 // Map des icônes

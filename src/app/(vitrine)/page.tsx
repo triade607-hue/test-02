@@ -1,4 +1,8 @@
+"use client";
+
+import { useEffect } from "react";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 
 // Components
 import { Button } from "@/components/ui";
@@ -12,12 +16,14 @@ import {
   PartnersSlider,
   TestimonialsSlider,
   CtaSection,
-  // CtaSection,
 } from "@/components/shared";
 import { NewsletterBanner } from "@/components/layout";
 
 // Data
-import { events, articles, missions } from "@/lib/data";
+import { events, missions } from "@/lib/data";
+
+// Hook pour les articles
+import { useArticles } from "@/hooks/use-articles";
 
 export default function HomePage() {
   // Get upcoming events (max 3)
@@ -25,8 +31,17 @@ export default function HomePage() {
     .filter((e) => e.status === "upcoming")
     .slice(0, 3);
 
-  // Get latest articles (max 3)
-  const latestArticles = articles.slice(0, 3);
+  // Hook pour les articles
+  const {
+    articles: latestArticles,
+    isLoading: isLoadingArticles,
+    fetchLatestArticles,
+  } = useArticles();
+
+  // Charger les 3 derniers articles
+  useEffect(() => {
+    fetchLatestArticles(3);
+  }, [fetchLatestArticles]);
 
   return (
     <>
@@ -102,11 +117,23 @@ export default function HomePage() {
             subtitle="Restez informé des dernières tendances du numérique et des actualités de notre communauté."
           />
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {latestArticles.map((article, index) => (
-              <ArticleCard key={article.id} article={article} index={index} />
-            ))}
-          </div>
+          {isLoadingArticles ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+            </div>
+          ) : latestArticles.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {latestArticles.map((article, index) => (
+                <ArticleCard key={article.id} article={article} index={index} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-neutral-500">
+                Aucun article disponible pour le moment.
+              </p>
+            </div>
+          )}
 
           <div className="text-center mt-12">
             <Link href="/news">
@@ -120,7 +147,7 @@ export default function HomePage() {
       <TestimonialsSlider />
 
       {/* CTA SECTION */}
-      <CtaSection/>
+      <CtaSection />
 
       {/* NEWSLETTER BANNER */}
       <NewsletterBanner />

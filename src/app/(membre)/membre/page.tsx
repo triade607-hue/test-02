@@ -1,8 +1,8 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import Image from "next/image";
 import {
   Calendar,
   Gift,
@@ -11,48 +11,35 @@ import {
   ArrowRight,
   Clock,
   MapPin,
-  TrendingUp,
-  Download,
-  MessageSquare,
-  CheckCircle2,
+  Crown,
   Sparkles,
+  Lock,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/format-validation";
 
-// Mock data
-const MOCK_USER = {
-  firstName: "Jean",
-  lastName: "Dupont",
-  memberType: "Utilisateur",
-  tier: "Sunun",
-  tierColor: "#F9A825",
-  memberSince: "Janvier 2024",
+// Auth
+import { useAuth } from "@/hooks/use-auth";
+
+// ============================================================
+// CONFIGURATION DES TIERS
+// ============================================================
+const TIER_CONFIG: Record<string, { label: string; color: string }> = {
+  ASUKA: { label: "Asuka", color: "#26A69A" },
+  SUNUN: { label: "Sunun", color: "#F9A825" },
+  MINDAHO: { label: "Mindaho", color: "#0077B6" },
+  DAH: { label: "Dah", color: "#7B1FA2" },
 };
 
-const MOCK_QUOTAS = [
-  {
-    label: "Demandes d'expertise",
-    used: 3,
-    total: 5,
-    icon: MessageSquare,
-    color: "#0077B6",
-  },
-  {
-    label: "Téléchargements",
-    used: 7,
-    total: 10,
-    icon: Download,
-    color: "#26A69A",
-  },
-  {
-    label: "Présentations",
-    used: 1,
-    total: 2,
-    icon: Users,
-    color: "#F9A825",
-  },
-];
+const MEMBER_TYPE_LABELS: Record<string, string> = {
+  OFFREUR: "Offreur",
+  UTILISATEUR: "Utilisateur",
+  CONTRIBUTEUR: "Contributeur",
+  PARTENAIRE: "Partenaire",
+};
 
+// ============================================================
+// MOCK DATA - En attendant les APIs dashboard (events, quotas)
+// ============================================================
 const MOCK_EVENTS = [
   {
     id: "1",
@@ -76,31 +63,53 @@ const MOCK_EVENTS = [
   },
 ];
 
-const MOCK_ADVANTAGES = [
-  {
-    label: "50% de rabais sur les événements",
-    active: true,
-  },
-  {
-    label: "5 demandes d'expertise/an",
-    active: true,
-  },
-  {
-    label: "Accès catégories Sunun et en deçà",
-    active: true,
-  },
-  {
-    label: "5 sollicitations projets/an",
-    active: true,
-  },
-  {
-    label: "Rabais colloques partenaires",
-    active: true,
-  },
-  {
-    label: "2 présentations lors de colloques",
-    active: true,
-  },
+// Avantages selon le tier (pour les membres)
+const TIER_ADVANTAGES: Record<string, string[]> = {
+  ASUKA: [
+    "50% de rabais sur les événements",
+    "2 demandes d'expertise/an",
+    "Accès catégorie Asuka",
+    "2 sollicitations projets/an",
+    "1 présentation lors de colloques",
+  ],
+  SUNUN: [
+    "50% de rabais sur les événements",
+    "5 demandes d'expertise/an",
+    "Accès catégories Sunun et Asuka",
+    "5 sollicitations projets/an",
+    "Rabais colloques partenaires",
+    "2 présentations lors de colloques",
+  ],
+  MINDAHO: [
+    "75% de rabais sur les événements",
+    "12 demandes d'expertise/an",
+    "Accès catégories Mindaho et en deçà",
+    "12 sollicitations projets/an",
+    "Rabais colloques partenaires",
+    "3 présentations lors de colloques",
+    "Mise en relation éditeurs",
+  ],
+  DAH: [
+    "Accès gratuit aux événements",
+    "Demandes d'expertise illimitées",
+    "Accès à toutes les catégories",
+    "Sollicitations projets illimitées",
+    "Rabais colloques partenaires",
+    "6 présentations lors de colloques",
+    "Mise en relation éditeurs",
+    "Rabais produits partenaires",
+  ],
+};
+
+// Avantages Freemium (limités)
+const FREEMIUM_FEATURES = [
+  { label: "Accès aux actualités", available: true },
+  { label: "Consultation événements", available: true },
+  { label: "Profil basique", available: true },
+  { label: "Rabais événements", available: false },
+  { label: "Demandes d'expertise", available: false },
+  { label: "Accès bibliothèque", available: false },
+  { label: "Sollicitations projets", available: false },
 ];
 
 const QUICK_ACTIONS = [
@@ -111,20 +120,35 @@ const QUICK_ACTIONS = [
     color: "bg-primary-500",
   },
   {
-    label: "Demander une expertise",
-    href: "/membre/expertise",
-    icon: MessageSquare,
+    label: "Actualités",
+    href: "/news",
+    icon: FileText,
     color: "bg-accent-500",
   },
   {
-    label: "Bibliothèque",
-    href: "/membre/bibliotheque",
-    icon: FileText,
+    label: "Annuaire membres",
+    href: "/members",
+    icon: Users,
     color: "bg-secondary-500",
   },
 ];
 
 export default function DashboardPage() {
+  // Données utilisateur depuis le contexte Auth
+  const { user } = useAuth();
+
+  // Logique Freemium / Membre
+  const isFreemium =
+    user?.role === "ROLE_GUEST" ||
+    (!user?.memberType && !user?.membershipTierId);
+
+  // Récupérer le tier config
+  const tierKey = user?.membershipTierId?.toUpperCase() || "";
+  const tierConfig = TIER_CONFIG[tierKey] || null;
+
+  // Avantages selon le tier
+  const advantages = tierKey ? TIER_ADVANTAGES[tierKey] || [] : [];
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("fr-FR", {
@@ -141,7 +165,12 @@ export default function DashboardPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="relative overflow-hidden bg-gradient-to-r from-primary-600 to-accent-500 rounded-md p-6 md:p-8 text-white"
+        className={cn(
+          "relative overflow-hidden rounded-md p-6 md:p-8 text-white",
+          isFreemium
+            ? "bg-gradient-to-r from-neutral-700 to-neutral-600"
+            : "bg-gradient-to-r from-primary-600 to-accent-500"
+        )}
       >
         {/* Cercles décoratifs */}
         <div className="absolute -top-10 -right-10 w-40 h-40 border-[20px] border-white/10 rounded-full" />
@@ -151,170 +180,152 @@ export default function DashboardPage() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold mb-2">
-                Bonjour, {MOCK_USER.firstName} ! 👋
+                Bonjour, {user?.firstName || "Membre"} ! 👋
               </h1>
               <p className="text-white/80">
-                Bienvenue dans votre espace personnel imo2tun
+                {isFreemium
+                  ? "Bienvenue ! Devenez membre pour accéder à tous les avantages."
+                  : "Bienvenue dans votre espace personnel imo2tun"}
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-md">
-                <span className="text-sm text-white/80">Membre</span>
-                <p className="font-semibold">{MOCK_USER.tier}</p>
+
+            {isFreemium ? (
+              // Bouton CTA Freemium
+              <Link
+                href="/membership"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-secondary-500 hover:bg-secondary-600 text-white font-semibold rounded-md transition-colors"
+              >
+                <Crown className="w-5 h-5" />
+                Devenir membre
+              </Link>
+            ) : (
+              // Info membre
+              <div className="flex items-center gap-3">
+                {tierConfig && (
+                  <div className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-md">
+                    <span className="text-sm text-white/80">Niveau</span>
+                    <p className="font-semibold">{tierConfig.label}</p>
+                  </div>
+                )}
+                {user?.memberType && (
+                  <div className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-md">
+                    <span className="text-sm text-white/80">Type</span>
+                    <p className="font-semibold">
+                      {MEMBER_TYPE_LABELS[user.memberType] || user.memberType}
+                    </p>
+                  </div>
+                )}
               </div>
-              <div className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-md">
-                <span className="text-sm text-white/80">Depuis</span>
-                <p className="font-semibold">{MOCK_USER.memberSince}</p>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </motion.div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {MOCK_QUOTAS.map((quota, index) => (
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - Events & Quick Actions */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Upcoming Events */}
           <motion.div
-            key={quota.label}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 + index * 0.1 }}
-            className="bg-white rounded-md p-5 border border-neutral-100"
+            transition={{ duration: 0.4, delay: 0.2 }}
+            className="bg-white rounded-md border border-neutral-100 p-5"
           >
-            <div className="flex items-start justify-between mb-4">
-              <div
-                className="w-10 h-10 rounded-md flex items-center justify-center"
-                style={{ backgroundColor: `${quota.color}15` }}
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-neutral-900">
+                {isFreemium ? "Événements à venir" : "Mes prochains événements"}
+              </h2>
+              <Link
+                href="/events"
+                className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
               >
-                <quota.icon
-                  className="w-5 h-5"
-                  style={{ color: quota.color }}
-                />
-              </div>
-              <span className="text-sm text-neutral-500">
-                {quota.used}/{quota.total}
-              </span>
+                Tout voir
+                <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
-            <h3 className="font-medium text-neutral-900 mb-2">{quota.label}</h3>
-            {/* Progress bar */}
-            <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{
-                  width: `${(quota.used / quota.total) * 100}%`,
-                  backgroundColor: quota.color,
-                }}
-              />
-            </div>
-          </motion.div>
-        ))}
-      </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Events */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-          className="lg:col-span-2 bg-white rounded-md border border-neutral-100"
-        >
-          <div className="flex items-center justify-between p-5 border-b border-neutral-100">
-            <h2 className="font-semibold text-neutral-900 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-primary-500" />
-              Mes prochains événements
-            </h2>
-            <Link
-              href="/membre/evenements"
-              className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
-            >
-              Voir tout
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          <div className="divide-y divide-neutral-100">
-            {MOCK_EVENTS.map((event) => (
-              <div
-                key={event.id}
-                className="p-5 flex gap-4 hover:bg-neutral-50 transition-colors"
-              >
-                <div className="w-20 h-20 rounded-md overflow-hidden flex-shrink-0">
-                  <Image
-                    src={event.image}
-                    alt={event.title}
-                    width={80}
-                    height={80}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-medium text-neutral-900 truncate">
-                      {event.title}
-                    </h3>
-                    <span
-                      className={cn(
-                        "px-2 py-0.5 text-xs font-medium rounded-md flex-shrink-0",
-                        event.status === "confirmed"
-                          ? "bg-accent-100 text-accent-700"
-                          : "bg-secondary-100 text-secondary-700"
-                      )}
-                    >
-                      {event.status === "confirmed" ? "Confirmé" : "En attente"}
-                    </span>
-                  </div>
-                  <div className="mt-2 space-y-1">
-                    <div className="flex items-center gap-2 text-sm text-neutral-500">
-                      <Clock className="w-4 h-4" />
-                      <span>
-                        {formatDate(event.date)} • {event.time}
+            {MOCK_EVENTS.length > 0 ? (
+              <div className="space-y-3">
+                {MOCK_EVENTS.map((event) => (
+                  <div
+                    key={event.id}
+                    className="flex items-center gap-4 p-3 bg-neutral-50 rounded-md hover:bg-neutral-100 transition-colors"
+                  >
+                    <img
+                      src={event.image}
+                      alt={event.title}
+                      className="w-16 h-16 rounded-md object-cover"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-neutral-900 text-sm truncate">
+                        {event.title}
+                      </h3>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-neutral-500">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {formatDate(event.date)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {event.time}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 mt-1 text-xs text-neutral-500">
+                        <MapPin className="w-3 h-3" />
+                        {event.location}
+                      </div>
+                    </div>
+                    {!isFreemium && (
+                      <span
+                        className={cn(
+                          "px-2 py-1 text-xs font-medium rounded-md",
+                          event.status === "confirmed"
+                            ? "bg-accent-100 text-accent-700"
+                            : "bg-secondary-100 text-secondary-700"
+                        )}
+                      >
+                        {event.status === "confirmed"
+                          ? "Confirmé"
+                          : "En attente"}
                       </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-neutral-500">
-                      <MapPin className="w-4 h-4" />
-                      <span>{event.location}</span>
-                    </div>
+                    )}
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
-
-            {MOCK_EVENTS.length === 0 && (
-              <div className="p-8 text-center">
+            ) : (
+              <div className="text-center py-8">
                 <Calendar className="w-12 h-12 text-neutral-300 mx-auto mb-3" />
-                <p className="text-neutral-500">Aucun événement à venir</p>
+                <p className="text-neutral-500 text-sm">
+                  Aucun événement à venir
+                </p>
                 <Link
                   href="/events"
-                  className="mt-3 inline-flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 font-medium"
+                  className="inline-flex items-center gap-1 mt-3 text-sm text-primary-600 hover:text-primary-700 font-medium"
                 >
                   Découvrir les événements
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
             )}
-          </div>
-        </motion.div>
+          </motion.div>
 
-        {/* Right Column - Advantages & Actions */}
-        <div className="space-y-6">
           {/* Quick Actions */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.4 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
             className="bg-white rounded-md border border-neutral-100 p-5"
           >
-            <h2 className="font-semibold text-neutral-900 mb-4 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-secondary-500" />
+            <h2 className="font-semibold text-neutral-900 mb-4">
               Actions rapides
             </h2>
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {QUICK_ACTIONS.map((action) => (
                 <Link
-                  key={action.href}
+                  key={action.label}
                   href={action.href}
-                  className="flex items-center gap-3 p-3 rounded-md hover:bg-neutral-50 transition-colors group"
+                  className="flex items-center gap-3 p-4 rounded-md border border-neutral-100 hover:border-neutral-200 hover:shadow-sm transition-all group"
                 >
                   <div
                     className={cn(
@@ -324,75 +335,118 @@ export default function DashboardPage() {
                   >
                     <action.icon className="w-5 h-5" />
                   </div>
-                  <span className="flex-1 font-medium text-neutral-700 group-hover:text-neutral-900">
+                  <span className="text-sm font-medium text-neutral-700 group-hover:text-neutral-900">
                     {action.label}
                   </span>
-                  <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600 group-hover:translate-x-1 transition-all" />
                 </Link>
               ))}
             </div>
           </motion.div>
+        </div>
 
-          {/* My Advantages */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.5 }}
-            className="bg-white rounded-md border border-neutral-100"
-          >
-            <div className="flex items-center justify-between p-5 border-b border-neutral-100">
-              <h2 className="font-semibold text-neutral-900 flex items-center gap-2">
-                <Gift className="w-5 h-5 text-accent-500" />
-                Mes avantages
-              </h2>
-              <span
-                className="px-2 py-0.5 text-xs font-semibold rounded-md text-white"
-                style={{ backgroundColor: MOCK_USER.tierColor }}
-              >
-                {MOCK_USER.tier}
-              </span>
-            </div>
-            <div className="p-5">
-              <ul className="space-y-3">
-                {MOCK_ADVANTAGES.slice(0, 5).map((advantage, index) => (
-                  <li key={index} className="flex items-start gap-3 text-sm">
-                    <CheckCircle2 className="w-5 h-5 text-accent-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-neutral-700">{advantage.label}</span>
+        {/* Right Column - Advantages */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.4 }}
+          className="bg-white rounded-md border border-neutral-100 p-5"
+        >
+          {isFreemium ? (
+            // ========== FREEMIUM ==========
+            <>
+              <div className="flex items-center gap-2 mb-4">
+                <Lock className="w-5 h-5 text-neutral-400" />
+                <h2 className="font-semibold text-neutral-900">
+                  Fonctionnalités
+                </h2>
+              </div>
+
+              <div className="mb-4 p-3 bg-neutral-50 rounded-md">
+                <p className="text-sm text-neutral-600">
+                  Votre compte Freemium vous donne un accès limité. Devenez
+                  membre pour débloquer tous les avantages !
+                </p>
+              </div>
+
+              <ul className="space-y-2 mb-4">
+                {FREEMIUM_FEATURES.map((feature, index) => (
+                  <li key={index} className="flex items-center gap-2">
+                    {feature.available ? (
+                      <span className="w-4 h-4 rounded-full bg-accent-100 flex items-center justify-center">
+                        <span className="w-2 h-2 rounded-full bg-accent-500" />
+                      </span>
+                    ) : (
+                      <Lock className="w-4 h-4 text-neutral-300" />
+                    )}
+                    <span
+                      className={cn(
+                        "text-sm",
+                        feature.available
+                          ? "text-neutral-700"
+                          : "text-neutral-400"
+                      )}
+                    >
+                      {feature.label}
+                    </span>
                   </li>
                 ))}
               </ul>
+
+              <Link
+                href="/membership"
+                className="flex items-center justify-center gap-2 w-full py-3 bg-secondary-500 hover:bg-secondary-600 text-white font-semibold rounded-md transition-colors"
+              >
+                <Crown className="w-4 h-4" />
+                Devenir membre
+              </Link>
+            </>
+          ) : (
+            // ========== MEMBRE ==========
+            <>
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="w-5 h-5 text-secondary-500" />
+                <h2 className="font-semibold text-neutral-900">
+                  Mes avantages
+                </h2>
+              </div>
+
+              {tierConfig && (
+                <div className="mb-4 p-3 bg-gradient-to-r from-secondary-50 to-secondary-100 rounded-md">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Gift className="w-4 h-4 text-secondary-600" />
+                    <span className="text-sm font-semibold text-secondary-700">
+                      Niveau {tierConfig.label}
+                    </span>
+                  </div>
+                  <p className="text-xs text-secondary-600">
+                    Profitez de tous vos avantages exclusifs
+                  </p>
+                </div>
+              )}
+
+              <ul className="space-y-2">
+                {advantages.map((advantage, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="w-4 h-4 rounded-full bg-accent-100 flex items-center justify-center mt-0.5 flex-shrink-0">
+                      <span className="w-2 h-2 rounded-full bg-accent-500" />
+                    </span>
+                    <span className="text-sm text-neutral-700">
+                      {advantage}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
               <Link
                 href="/membre/avantages"
-                className="mt-4 flex items-center justify-center gap-2 w-full py-2.5 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-md transition-colors"
+                className="flex items-center justify-center gap-2 w-full mt-4 py-2.5 text-sm font-medium text-primary-600 bg-primary-50 rounded-md hover:bg-primary-100 transition-colors"
               >
                 Voir tous mes avantages
                 <ArrowRight className="w-4 h-4" />
               </Link>
-            </div>
-          </motion.div>
-
-          {/* Upgrade Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.6 }}
-            className="relative overflow-hidden bg-gradient-to-br from-secondary-500 to-secondary-600 rounded-md p-5 text-white"
-          >
-            <div className="absolute -top-6 -right-6 w-24 h-24 border-[15px] border-white/10 rounded-full" />
-            <TrendingUp className="w-8 h-8 mb-3" />
-            <h3 className="font-semibold mb-1">Passez au niveau supérieur</h3>
-            <p className="text-white/80 text-sm mb-4">
-              Débloquez plus d&apos;avantages avec Mindaho
-            </p>
-            <Link
-              href="/membre/upgrade"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white text-secondary-600 font-semibold text-sm rounded-md hover:bg-white/90 transition-colors"
-            >
-              Mettre à niveau
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </motion.div>
-        </div>
+            </>
+          )}
+        </motion.div>
       </div>
     </div>
   );

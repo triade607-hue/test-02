@@ -5,7 +5,8 @@ import { motion } from "framer-motion";
 import { Calendar, Clock, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Article } from "@/types";
+import { Article } from "@/types/article.types";
+import { getImageUrl, getAvatarUrl } from "@/lib/utils/image-url";
 
 interface ArticleCardProps {
   article: Article;
@@ -23,6 +24,10 @@ export function ArticleCard({ article, index = 0 }: ArticleCardProps) {
       year: "numeric",
     });
   };
+
+  // Construire les URLs des images
+  const imageUrl = getImageUrl(article.featuredImage);
+  const authorImageUrl = getAvatarUrl(article.authorImage);
 
   return (
     <motion.article
@@ -42,7 +47,7 @@ export function ArticleCard({ article, index = 0 }: ArticleCardProps) {
           className="absolute inset-0"
         >
           <Image
-            src={article.image}
+            src={imageUrl}
             alt={article.title}
             fill
             className="object-cover"
@@ -77,7 +82,7 @@ export function ArticleCard({ article, index = 0 }: ArticleCardProps) {
           className="absolute top-4 right-4 z-10"
         >
           <span className="px-4 py-1.5 bg-[#007DC5] text-white text-xs font-bold rounded-full shadow-lg">
-            {article.category}
+            {article.category.name}
           </span>
         </motion.div>
 
@@ -90,7 +95,7 @@ export function ArticleCard({ article, index = 0 }: ArticleCardProps) {
         >
           <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-sm text-neutral-700 text-xs font-medium rounded-full">
             <Clock className="w-3.5 h-3.5" />
-            {article.readTime} min de lecture
+            {article.readingTime} min de lecture
           </span>
         </motion.div>
       </div>
@@ -128,17 +133,19 @@ export function ArticleCard({ article, index = 0 }: ArticleCardProps) {
           <div className="flex items-center gap-3">
             <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-white shadow-md">
               <Image
-                src={article.author.avatar}
-                alt={article.author.name}
+                src={authorImageUrl}
+                alt={article.authorName}
                 fill
                 className="object-cover"
               />
             </div>
             <div>
               <p className="text-sm font-semibold text-neutral-800">
-                {article.author.name}
+                {article.authorName}
               </p>
-              <p className="text-xs text-neutral-500">{article.author.role}</p>
+              <p className="text-xs text-neutral-500">
+                {article.authorProfession}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-1.5 text-neutral-500 text-xs">
@@ -164,14 +171,6 @@ export function ArticleCard({ article, index = 0 }: ArticleCardProps) {
           </motion.div>
         </Link>
       </div>
-
-      {/* Bordure animée en bas */}
-      {/* <motion.div
-        initial={{ scaleX: 0 }}
-        animate={{ scaleX: isHovered ? 1 : 0 }}
-        transition={{ duration: 0.5 }}
-        className="absolute bottom-0 left-0 right-0 h-1 bg-[#007DC5] origin-left"
-      /> */}
     </motion.article>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, useEffect, use, useCallback } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -14,15 +14,67 @@ import {
   Linkedin,
   Link2,
   Check,
+  Loader2,
 } from "lucide-react";
 
 // Components
 import { HeroSecondary } from "@/components/shared/hero-secondary";
 
-// Data
-import { articles } from "@/lib/data/articles";
+// API
+import { get } from "@/lib/api/client";
+import { API_BASE_URL, ARTICLES_ENDPOINTS } from "@/lib/api/endpoints";
 
-// Format date
+// ==================== TYPES ====================
+
+interface ArticleCategory {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface RelatedPost {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  featuredImage: string;
+  publishedAt: string;
+}
+
+interface ArticleDetail {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  featuredImage: string;
+  category: ArticleCategory;
+  authorName: string;
+  authorImage: string;
+  authorProfession: string;
+  publishedAt: string;
+  readingTime: number;
+  tags: string[];
+  relatedPosts: RelatedPost[];
+}
+
+// ==================== HELPERS ====================
+
+const PLACEHOLDER_IMAGE = "/images/placeholder-article.png";
+const PLACEHOLDER_AVATAR = "/images/placeholder-avatar.png";
+
+function getImageUrl(path: string | null | undefined): string {
+  if (!path || path.trim() === "") return PLACEHOLDER_IMAGE;
+  if (path.startsWith("http")) return path;
+  return `${API_BASE_URL}${path}`;
+}
+
+function getAvatarUrl(path: string | null | undefined): string {
+  if (!path || path.trim() === "") return PLACEHOLDER_AVATAR;
+  if (path.startsWith("http")) return path;
+  return `${API_BASE_URL}${path}`;
+}
+
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
   return date.toLocaleDateString("fr-FR", {
@@ -32,7 +84,8 @@ function formatDate(dateString: string): string {
   });
 }
 
-// Render markdown content
+// ==================== RENDER CONTENT ====================
+
 function renderContent(content: string): React.ReactNode {
   const lines = content.trim().split("\n");
   const elements: React.ReactNode[] = [];
@@ -77,6 +130,8 @@ function renderContent(content: string): React.ReactNode {
   return elements;
 }
 
+// ==================== PAGE COMPONENT ====================
+
 export default function ArticleDetailPage({
   params,
 }: {
@@ -84,14 +139,35 @@ export default function ArticleDetailPage({
 }) {
   const { slug } = use(params);
   const [copied, setCopied] = useState(false);
+  const [article, setArticle] = useState<ArticleDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Find article
-  const article = articles.find((a) => a.slug === slug);
+  // Fetch article
+  const fetchArticle = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
 
-  // Get related articles
-  const relatedArticles = articles
-    .filter((a) => a.id !== article?.id && a.category === article?.category)
-    .slice(0, 3);
+    try {
+      console.log("Fetching article with slug:", slug);
+      const data = await get<ArticleDetail>(
+        ARTICLES_ENDPOINTS.DETAIL(slug),
+        false
+      );
+      console.log("Article data received:", data);
+      setArticle(data);
+    } catch (err) {
+      console.error("Error fetching article:", err);
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [slug]);
+
+  // Charger l'article au montage
+  useEffect(() => {
+    fetchArticle();
+  }, [fetchArticle]);
 
   // Copy link handler
   const handleCopyLink = () => {
@@ -102,15 +178,41 @@ export default function ArticleDetailPage({
 
   // Share handlers
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
-
   const shareLinks = {
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
     linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
   };
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#0077B6]" />
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <p className="text-red-500 text-lg">Erreur: {error}</p>
+        <p className="text-neutral-500">Slug demandé: {slug}</p>
+        <Link href="/news" className="text-[#0077B6] hover:underline">
+          Retour aux actualités
+        </Link>
+      </div>
+    );
+  }
+
+  // Not found
   if (!article) {
     notFound();
   }
+
+  // URLs des images
+  const imageUrl = getImageUrl(article.featuredImage);
+  const authorImageUrl = getAvatarUrl(article.authorImage);
 
   return (
     <>
@@ -124,22 +226,22 @@ export default function ArticleDetailPage({
           <div className="flex items-center gap-3">
             <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-white/30">
               <Image
-                src={article.author.avatar}
-                alt={article.author.name}
+                src={authorImageUrl}
+                alt={article.authorName}
                 fill
                 className="object-cover"
               />
             </div>
-            <span className="text-white font-medium">
-              {article.author.name}
-            </span>
+            <span className="text-white font-medium">{article.authorName}</span>
           </div>
           <span className="text-white/50">•</span>
-          <span className="text-white/80">Catégorie : {article.category}</span>
+          <span className="text-white/80">
+            Catégorie : {article.category.name}
+          </span>
         </div>
       </HeroSecondary>
 
-      {/* Breadcrumb + Share (same style as listing page) */}
+      {/* Breadcrumb + Share */}
       <div className="bg-neutral-50">
         <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -147,19 +249,19 @@ export default function ArticleDetailPage({
             <nav className="flex items-center gap-2 text-sm">
               <Link
                 href="/"
-                className="text-neutral-600 hover:text-primary-600 transition-colors"
+                className="text-neutral-600 hover:text-[#0077B6] transition-colors"
               >
                 Accueil
               </Link>
               <ChevronRight className="w-4 h-4 text-neutral-400" />
               <Link
                 href="/news"
-                className="text-neutral-600 hover:text-primary-600 transition-colors"
+                className="text-neutral-600 hover:text-[#0077B6] transition-colors"
               >
                 Actualités & Insights
               </Link>
               <ChevronRight className="w-4 h-4 text-neutral-400" />
-              <span className="text-secondary-500 font-medium">Article</span>
+              <span className="text-[#F9A825] font-medium">Article</span>
             </nav>
 
             {/* Share Button */}
@@ -197,7 +299,7 @@ export default function ArticleDetailPage({
               >
                 <div className="relative aspect-[16/9]">
                   <Image
-                    src={article.image}
+                    src={imageUrl}
                     alt={article.title}
                     fill
                     className="object-cover"
@@ -212,7 +314,7 @@ export default function ArticleDetailPage({
                   </span>
                   <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded-full text-sm text-neutral-700">
                     <Clock className="w-4 h-4 text-[#26A69A]" />
-                    {article.readTime} min
+                    {article.readingTime} min
                   </span>
                 </div>
               </motion.div>
@@ -228,9 +330,7 @@ export default function ArticleDetailPage({
                   &ldquo;
                 </span>
                 <p className="text-neutral-700 italic pl-8 pr-4">
-                  Diam luctus nostra dapibus varius at semper semper rutrum ad
-                  risus felis arcu. Cursus libero viverra tempus netus diam
-                  vestibulum.
+                  {article.excerpt}
                 </p>
               </motion.blockquote>
 
@@ -256,7 +356,7 @@ export default function ArticleDetailPage({
                         key={tag}
                         className="px-3 py-1.5 bg-neutral-100 text-neutral-600 text-sm rounded-full hover:bg-neutral-200 transition-colors cursor-pointer"
                       >
-                        #{tag}
+                        #{tag.trim()}
                       </span>
                     ))}
                   </div>
@@ -303,13 +403,13 @@ export default function ArticleDetailPage({
                 </div>
 
                 {/* Related Articles */}
-                {relatedArticles.length > 0 && (
+                {article.relatedPosts && article.relatedPosts.length > 0 && (
                   <div className="bg-neutral-50 rounded-md p-6">
                     <h3 className="font-semibold text-neutral-900 mb-6">
                       Articles similaires
                     </h3>
                     <div className="space-y-5">
-                      {relatedArticles.map((relatedArticle) => (
+                      {article.relatedPosts.map((relatedArticle) => (
                         <Link
                           key={relatedArticle.id}
                           href={`/news/${relatedArticle.slug}`}
@@ -319,7 +419,7 @@ export default function ArticleDetailPage({
                             {/* Thumbnail */}
                             <div className="relative w-24 h-20 rounded-md overflow-hidden flex-shrink-0">
                               <Image
-                                src={relatedArticle.image}
+                                src={getImageUrl(relatedArticle.featuredImage)}
                                 alt={relatedArticle.title}
                                 fill
                                 className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -334,19 +434,6 @@ export default function ArticleDetailPage({
                               <h4 className="text-sm font-semibold text-neutral-900 line-clamp-2 group-hover:text-[#0077B6] transition-colors leading-snug">
                                 {relatedArticle.title}
                               </h4>
-                              <div className="flex items-center gap-2 mt-2">
-                                <div className="relative w-5 h-5 rounded-full overflow-hidden">
-                                  <Image
-                                    src={relatedArticle.author.avatar}
-                                    alt={relatedArticle.author.name}
-                                    fill
-                                    className="object-cover"
-                                  />
-                                </div>
-                                <span className="text-xs text-neutral-500">
-                                  {relatedArticle.author.name}
-                                </span>
-                              </div>
                             </div>
                           </div>
                         </Link>

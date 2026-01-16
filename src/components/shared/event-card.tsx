@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, Clock, MapPin, ArrowRight, Sparkles } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/format-validation";
 import { Event } from "@/types";
 import { EventRegistrationModal } from "./event-registration-modal";
 

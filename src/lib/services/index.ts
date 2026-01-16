@@ -16,3 +16,10 @@ export {
   resetPassword,
   getProfile,
 } from "./auth.service";
+
+export {
+  profileService,
+  updateProfile,
+  uploadProfilePicture,
+  changePassword,
+} from "./profile.service";

@@ -6,7 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/format-validation";
 import { NAV_LINKS } from "@/lib/constants";
 import { Button } from "@/components/ui";
 import { UserMenu } from "./user-menu";

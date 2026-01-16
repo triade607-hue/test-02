@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Star, Quote } from "lucide-react";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/format-validation";
 import { Testimonial } from "@/types";
 
 interface TestimonialCardProps {

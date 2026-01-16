@@ -1,27 +1,30 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { ChevronRight, ChevronLeft, Search } from "lucide-react";
+import { ChevronRight, ChevronLeft, Search, Loader2 } from "lucide-react";
 
 // Components
 import { HeroSecondary } from "@/components/shared/hero-secondary";
 import { ArticleCard } from "@/components/shared/article-card";
 
-// Data
-import { articles } from "@/lib/data/articles";
+// Hook & Service
+import { useArticles } from "@/hooks/use-articles";
 
 // Constants
 const ARTICLES_PER_PAGE = 6;
-const ARTICLE_CATEGORIES = [
-  "Toutes",
-  "Tech",
-  "Digital",
-  "Education",
-  "Événement",
-];
 
 export default function ArticlesPage() {
+  // Hook pour les articles
+  const {
+    articles,
+    categories,
+    isLoading,
+    error,
+    fetchArticles,
+    fetchCategories,
+  } = useArticles();
+
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Toutes");
@@ -29,7 +32,18 @@ export default function ArticlesPage() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Filter articles
+  // Charger les articles et catégories au montage
+  useEffect(() => {
+    fetchArticles({ size: 50 });
+    fetchCategories();
+  }, [fetchArticles, fetchCategories]);
+
+  // Construire la liste des catégories pour le filtre
+  const categoryOptions = useMemo(() => {
+    return ["Toutes", ...categories.map((cat) => cat.name)];
+  }, [categories]);
+
+  // Filter articles (côté client pour réactivité)
   const filteredArticles = useMemo(() => {
     return articles.filter((article) => {
       // Search filter
@@ -42,11 +56,12 @@ export default function ArticlesPage() {
 
       // Category filter
       const matchesCategory =
-        selectedCategory === "Toutes" || article.category === selectedCategory;
+        selectedCategory === "Toutes" ||
+        article.category.name === selectedCategory;
 
       return matchesSearch && matchesCategory;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [articles, searchQuery, selectedCategory]);
 
   // Pagination
   const totalPages = Math.ceil(filteredArticles.length / ARTICLES_PER_PAGE);
@@ -147,7 +162,7 @@ export default function ArticlesPage() {
                   }
                   className="appearance-none w-full sm:w-48 px-3 sm:px-4 py-2.5 pr-8 sm:pr-10 border border-neutral-200 rounded-md text-xs sm:text-sm bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent cursor-pointer"
                 >
-                  {ARTICLE_CATEGORIES.map((cat) => (
+                  {categoryOptions.map((cat) => (
                     <option key={cat} value={cat}>
                       {cat === "Toutes" ? "Catégorie" : cat}
                     </option>
@@ -162,7 +177,22 @@ export default function ArticlesPage() {
         {/* Articles Grid */}
         <section className="py-12 lg:py-16">
           <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12">
-            {paginatedArticles.length > 0 ? (
+            {/* Loading state */}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+              </div>
+            ) : error ? (
+              <div className="text-center py-16">
+                <p className="text-red-500 text-lg">{error}</p>
+                <button
+                  onClick={() => fetchArticles({ size: 50 })}
+                  className="mt-4 text-primary-600 font-medium hover:underline"
+                >
+                  Réessayer
+                </button>
+              </div>
+            ) : paginatedArticles.length > 0 ? (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {paginatedArticles.map((article, index) => (
                   <ArticleCard
@@ -190,7 +220,7 @@ export default function ArticlesPage() {
             )}
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {!isLoading && totalPages > 1 && (
               <div className="flex items-center justify-center gap-2 mt-12">
                 {/* Previous Button */}
                 <button
@@ -215,7 +245,7 @@ export default function ArticlesPage() {
                       page === currentPage
                         ? "bg-secondary-500 text-white"
                         : page === "..."
-                          ? "cursor-default text-neutral-400"
+                          ? "bg-transparent text-neutral-400 cursor-default"
                           : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50"
                     }`}
                   >

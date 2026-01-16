@@ -14,7 +14,7 @@ import {
   Clock3,
   ExternalLink,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/format-validation";
 
 // Mock data
 const MOCK_EVENTS = [

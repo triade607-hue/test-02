@@ -17,10 +17,22 @@ import {
   Trash2,
   AlertTriangle,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/format-validation";
+import { useProfile } from "@/hooks/use-profile";
 
 export default function ParametresPage() {
+  // Hook pour le changement de mot de passe
+  const {
+    isChangingPassword,
+    error,
+    successMessage,
+    changePassword,
+    clearError,
+    clearSuccessMessage,
+  } = useProfile();
+
   const [showPassword, setShowPassword] = useState(false);
   const [notifications, setNotifications] = useState({
     email: true,
@@ -44,6 +56,23 @@ export default function ParametresPage() {
     confirm: "",
   });
 
+  // Handler pour soumettre le changement de mot de passe
+  const handlePasswordSubmit = async () => {
+    if (!passwordForm.current || !passwordForm.new || !passwordForm.confirm) {
+      return;
+    }
+
+    const success = await changePassword({
+      currentPassword: passwordForm.current,
+      newPassword: passwordForm.new,
+      confirmPassword: passwordForm.confirm,
+    });
+
+    if (success) {
+      setPasswordForm({ current: "", new: "", confirm: "" });
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -57,6 +86,39 @@ export default function ParametresPage() {
           Gérez vos préférences et la sécurité de votre compte
         </p>
       </motion.div>
+
+      {/* Messages de feedback */}
+      {successMessage && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 bg-accent-50 border border-accent-200 rounded-md text-accent-700 text-sm"
+        >
+          {successMessage}
+          <button
+            onClick={clearSuccessMessage}
+            className="ml-2 text-accent-500 hover:text-accent-700"
+          >
+            ×
+          </button>
+        </motion.div>
+      )}
+
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm"
+        >
+          {error}
+          <button
+            onClick={clearError}
+            className="ml-2 text-red-500 hover:text-red-700"
+          >
+            ×
+          </button>
+        </motion.div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Navigation */}
@@ -323,9 +385,19 @@ export default function ParametresPage() {
                 />
               </div>
 
-              <button className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-500 text-white font-medium rounded-md hover:bg-primary-600 transition-colors">
-                <Lock className="w-4 h-4" />
-                Mettre à jour le mot de passe
+              <button
+                onClick={handlePasswordSubmit}
+                disabled={isChangingPassword}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-500 text-white font-medium rounded-md hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isChangingPassword ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Lock className="w-4 h-4" />
+                )}
+                {isChangingPassword
+                  ? "Mise à jour..."
+                  : "Mettre à jour le mot de passe"}
               </button>
             </div>
           </section>
@@ -499,51 +571,60 @@ export default function ParametresPage() {
               Attention : Ces actions sont irréversibles. Veuillez procéder avec
               précaution.
             </p>
-            <button
-              onClick={() => setShowDeleteModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-500 text-white font-medium rounded-md hover:bg-red-600 transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-              Supprimer mon compte
-            </button>
+            <div className="flex items-center justify-between py-3 border-t border-neutral-100">
+              <div>
+                <p className="font-medium text-neutral-900">
+                  Supprimer mon compte
+                </p>
+                <p className="text-sm text-neutral-500">
+                  Supprime définitivement votre compte et toutes vos données
+                </p>
+              </div>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="px-4 py-2 bg-red-50 text-red-600 font-medium rounded-md hover:bg-red-100 transition-colors flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Supprimer
+              </button>
+            </div>
           </section>
         </motion.div>
       </div>
 
       {/* Delete Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowDeleteModal(false)}
+        >
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
             className="bg-white rounded-md p-6 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-md bg-red-100 flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6 text-red-600" />
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
               </div>
-              <div>
-                <h3 className="font-semibold text-neutral-900">
-                  Supprimer le compte ?
-                </h3>
-                <p className="text-sm text-neutral-500">
-                  Cette action est irréversible
-                </p>
-              </div>
+              <h3 className="text-lg font-semibold text-neutral-900">
+                Confirmer la suppression
+              </h3>
             </div>
-            <p className="text-sm text-neutral-600 mb-6">
-              Toutes vos données seront définitivement supprimées. Vous perdrez
-              l&apos;accès à vos avantages et à votre historique.
+            <p className="text-neutral-600 mb-6">
+              Cette action est irréversible. Toutes vos données, adhésions et
+              historiques seront définitivement supprimés.
             </p>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 justify-end">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 px-4 py-2.5 border border-neutral-200 text-neutral-600 font-medium rounded-md hover:bg-neutral-50 transition-colors"
+                className="px-4 py-2 text-neutral-700 font-medium hover:bg-neutral-100 rounded-md transition-colors"
               >
                 Annuler
               </button>
-              <button className="flex-1 px-4 py-2.5 bg-red-500 text-white font-medium rounded-md hover:bg-red-600 transition-colors">
-                Supprimer
+              <button className="px-4 py-2 bg-red-600 text-white font-medium rounded-md hover:bg-red-700 transition-colors">
+                Supprimer définitivement
               </button>
             </div>
           </motion.div>
