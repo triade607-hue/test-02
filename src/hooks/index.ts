@@ -28,5 +28,8 @@ export {
 
 // ==================== HOOKS MÉTIER ====================
 
-// Hook articles (AJOUTÉ)
+// Hook articles
 export { useArticles, default as useArticlesHook } from "./use-articles";
+
+// Hook contact (NOUVEAU)
+export { useContact, default as useContactHook } from "./use-contact";

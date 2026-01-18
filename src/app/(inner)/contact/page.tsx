@@ -1,32 +1,52 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ChevronDown, Loader2 } from "lucide-react";
 
 // Components
 import { HeroSecondary } from "@/components/shared/hero-secondary";
 import { Button } from "@/components/ui";
 
+// Hook
+import { useContact } from "@/hooks/use-contact";
+
+// Types & Constants
+import type { ContactPayload } from "@/types/contact.types";
+import { PROFESSIONS } from "@/types/contact.types";
+
+// ==================== PAGE COMPONENT ====================
+
 export default function ContactPage() {
+  // Hook contact
+  const {
+    isSubmitting,
+    isSuccess,
+    error,
+    successMessage,
+    sendMessage,
+    clearError,
+    reset,
+  } = useContact();
+
   // Form state
   const [formData, setFormData] = useState({
     lastName: "",
     firstName: "",
     email: "",
     phone: "",
-    address: "",
+    profession: "",
     message: "",
     acceptTerms: false,
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-
   // Handle input change
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) => {
     const { name, value, type } = e.target;
     setFormData((prev) => ({
@@ -34,32 +54,47 @@ export default function ContactPage() {
       [name]:
         type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
     }));
+    // Clear error on change
+    if (error) clearError();
   };
 
   // Handle submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    // Validation
+    if (!formData.acceptTerms) {
+      return;
+    }
 
-    setIsSubmitting(false);
-    setIsSuccess(true);
+    // Payload pour l'API
+    const payload: ContactPayload = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+      profession: formData.profession,
+      message: formData.message,
+    };
 
-    // Reset form after success
-    setTimeout(() => {
-      setIsSuccess(false);
-      setFormData({
-        lastName: "",
-        firstName: "",
-        email: "",
-        phone: "",
-        address: "",
-        message: "",
-        acceptTerms: false,
-      });
-    }, 3000);
+    // Envoyer via le hook
+    const success = await sendMessage(payload);
+
+    if (success) {
+      // Reset form after delay
+      setTimeout(() => {
+        reset();
+        setFormData({
+          lastName: "",
+          firstName: "",
+          email: "",
+          phone: "",
+          profession: "",
+          message: "",
+          acceptTerms: false,
+        });
+      }, 5000);
+    }
   };
 
   return (
@@ -70,7 +105,7 @@ export default function ContactPage() {
         backgroundImage="/images/hero-bg.png"
       />
 
-      {/* Breadcrumb + Partager */}
+      {/* Breadcrumb */}
       <div className="bg-neutral-50">
         <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -125,9 +160,7 @@ export default function ContactPage() {
               <h3 className="text-xl font-bold text-neutral-900 mb-2">
                 Message envoyé !
               </h3>
-              <p className="text-neutral-600">
-                Nous vous répondrons dans les plus brefs délais.
-              </p>
+              <p className="text-neutral-600">{successMessage}</p>
             </motion.div>
           ) : (
             <motion.form
@@ -137,6 +170,13 @@ export default function ContactPage() {
               onSubmit={handleSubmit}
               className="space-y-5"
             >
+              {/* Message d'erreur */}
+              {error && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+                  {error}
+                </div>
+              )}
+
               {/* Nom & Prénom */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -192,35 +232,47 @@ export default function ContactPage() {
                     value={formData.phone}
                     onChange={handleChange}
                     required
+                    placeholder="+229 XX XX XX XX"
                     className="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-md text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                   />
                 </div>
               </div>
 
-              {/* Adresse */}
+              {/* Profession (Select) */}
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1.5">
-                  Adresse
+                  Profession<span className="text-secondary-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-md text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                />
+                <div className="relative">
+                  <select
+                    name="profession"
+                    value={formData.profession}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-md text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none cursor-pointer"
+                  >
+                    {PROFESSIONS.map((profession) => (
+                      <option key={profession.value} value={profession.value}>
+                        {profession.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 pointer-events-none" />
+                </div>
               </div>
 
               {/* Message */}
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1.5">
-                  Message
+                  Message<span className="text-secondary-500">*</span>
                 </label>
                 <textarea
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
+                  required
                   rows={6}
+                  placeholder="Décrivez votre demande..."
                   className="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-md text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all resize-none"
                 />
               </div>
@@ -229,64 +281,39 @@ export default function ContactPage() {
               <div className="flex items-start gap-3">
                 <input
                   type="checkbox"
-                  id="acceptTerms"
                   name="acceptTerms"
                   checked={formData.acceptTerms}
                   onChange={handleChange}
                   required
-                  className="mt-0.5 w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+                  className="mt-1 w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
                 />
-                <label
-                  htmlFor="acceptTerms"
-                  className="text-sm text-neutral-600"
-                >
-                  J&apos;accepte toutes les{" "}
-                  <Link
-                    href="/conditions-generales"
-                    className="text-primary-600 hover:underline"
-                  >
-                    conditions générales
-                  </Link>{" "}
-                  et la{" "}
+                <label className="text-sm text-neutral-600">
+                  J'accepte que mes données soient utilisées pour me recontacter
+                  dans le cadre de ma demande, conformément à notre{" "}
                   <Link
                     href="/politique-confidentialite"
                     className="text-primary-600 hover:underline"
                   >
                     politique de confidentialité
                   </Link>
+                  .<span className="text-secondary-500">*</span>
                 </label>
               </div>
 
               {/* Submit Button */}
-              <div className="pt-2">
+              <div className="pt-4">
                 <Button
                   type="submit"
-                  variant="primary"
-                  disabled={isSubmitting}
-                  className="px-8"
+                  disabled={isSubmitting || !formData.acceptTerms}
+                  className="w-full md:w-auto min-w-[200px]"
                 >
                   {isSubmitting ? (
-                    <span className="flex items-center gap-2">
-                      <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24">
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                          fill="none"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin" />
                       Envoi en cours...
                     </span>
                   ) : (
-                    <span className="flex items-center gap-2">Envoyer</span>
+                    "Envoyer le message"
                   )}
                 </Button>
               </div>

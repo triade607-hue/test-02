@@ -92,10 +92,13 @@ export const MEMBERSHIP_ENDPOINTS = {
 } as const;
 
 /**
- * Endpoints contact / newsletter
+ * Endpoints contact / newsletter (MIS À JOUR)
  */
 export const CONTACT_ENDPOINTS = {
-  SEND: "/api/contact",
+  // Contact public (formulaire de contact)
+  SEND: "/api/public/contact",
+
+  // Newsletter
   NEWSLETTER_SUBSCRIBE: "/api/newsletter/subscribe",
   NEWSLETTER_UNSUBSCRIBE: "/api/newsletter/unsubscribe",
 } as const;

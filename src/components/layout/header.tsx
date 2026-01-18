@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils/format-validation";
 import { NAV_LINKS } from "@/lib/constants";
 import { Button } from "@/components/ui";
-import { UserMenu } from "./user-menu";
+import { UserMenu, UserMenuMobile } from "./user-menu";
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -40,7 +40,7 @@ export function Header() {
       <header
         className={cn(
           "bg-white sticky top-0 z-50 transition-shadow duration-300",
-          isScrolled ? "shadow-md" : "shadow-none"
+          isScrolled ? "shadow-md" : "shadow-none",
         )}
       >
         <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12">
@@ -68,7 +68,7 @@ export function Header() {
                       "relative text-[14px] transition-colors pb-1",
                       isActive(link.href)
                         ? "text-[#F9A825] font-semibold"
-                        : "text-neutral-900 font-semibold hover:text-[#F9A825]"
+                        : "text-neutral-900 font-semibold hover:text-[#F9A825]",
                     )}
                   >
                     {link.label}
@@ -163,7 +163,7 @@ export function Header() {
                         "relative text-[15px] py-3 transition-colors",
                         isActive(link.href)
                           ? "text-[#F9A825] font-semibold"
-                          : "text-neutral-900 font-semibold hover:text-[#F9A825]"
+                          : "text-neutral-900 font-semibold hover:text-[#F9A825]",
                       )}
                     >
                       {link.label}
@@ -172,39 +172,13 @@ export function Header() {
                       )}
                     </Link>
                   ))}
-
-                  {/* Liens Auth */}
-                  <Link
-                    href="/login"
-                    onClick={closeMobileMenu}
-                    className={cn(
-                      "relative text-[15px] py-3 transition-colors",
-                      isActive("/login")
-                        ? "text-[#F9A825] font-semibold"
-                        : "text-neutral-900 font-semibold hover:text-[#F9A825]"
-                    )}
-                  >
-                    Se connecter
-                    {isActive("/login") && (
-                      <span className="absolute bottom-2 left-0 w-8 h-[2px] bg-[#F9A825] rounded-full" />
-                    )}
-                  </Link>
-                  <Link
-                    href="/register"
-                    onClick={closeMobileMenu}
-                    className={cn(
-                      "relative text-[15px] py-3 transition-colors",
-                      isActive("/register")
-                        ? "text-[#F9A825] font-semibold"
-                        : "text-neutral-900 font-semibold hover:text-[#F9A825]"
-                    )}
-                  >
-                    S&apos;inscrire
-                    {isActive("/register") && (
-                      <span className="absolute bottom-2 left-0 w-8 h-[2px] bg-[#F9A825] rounded-full" />
-                    )}
-                  </Link>
                 </div>
+
+                {/* Séparateur */}
+                <div className="my-6 border-t border-neutral-100" />
+
+                {/* Menu utilisateur dynamique (connecté ou non) */}
+                <UserMenuMobile onClose={closeMobileMenu} />
               </nav>
 
               {/* Sidebar Footer */}

@@ -6,8 +6,11 @@
 export * from "./auth.types";
 export * from "./profile.types";
 
-// ==================== ARTICLES (AJOUTÉ) ====================
+// ==================== ARTICLES ====================
 export * from "./article.types";
+
+// ==================== CONTACT (NOUVEAU) ====================
+export * from "./contact.types";
 
 // ==================== DASHBOARD ====================
 export * from "./dashboard.types";
