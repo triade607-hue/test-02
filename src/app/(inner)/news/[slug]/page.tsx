@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use, useCallback } from "react";
+import { useState, useEffect, use } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -20,61 +20,17 @@ import {
 // Components
 import { HeroSecondary } from "@/components/shared/hero-secondary";
 
-// API
-import { get } from "@/lib/api/client";
-import { API_BASE_URL, ARTICLES_ENDPOINTS } from "@/lib/api/endpoints";
+// Hook centralisé (chemin complet pour éviter les problèmes d'index)
+import { useArticles } from "@/hooks/use-articles";
 
-// ==================== TYPES ====================
-
-interface ArticleCategory {
-  id: string;
-  name: string;
-  slug: string;
-}
-
-interface RelatedPost {
-  id: string;
-  slug: string;
-  title: string;
-  excerpt: string;
-  featuredImage: string;
-  publishedAt: string;
-}
-
-interface ArticleDetail {
-  id: string;
-  slug: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  featuredImage: string;
-  category: ArticleCategory;
-  authorName: string;
-  authorImage: string;
-  authorProfession: string;
-  publishedAt: string;
-  readingTime: number;
-  tags: string[];
-  relatedPosts: RelatedPost[];
-}
+// Utilitaires centralisés
+import { getImageUrl, getAvatarUrl } from "@/lib/utils/image-url";
 
 // ==================== HELPERS ====================
 
-const PLACEHOLDER_IMAGE = "/images/placeholder-article.png";
-const PLACEHOLDER_AVATAR = "/images/placeholder-avatar.png";
-
-function getImageUrl(path: string | null | undefined): string {
-  if (!path || path.trim() === "") return PLACEHOLDER_IMAGE;
-  if (path.startsWith("http")) return path;
-  return `${API_BASE_URL}${path}`;
-}
-
-function getAvatarUrl(path: string | null | undefined): string {
-  if (!path || path.trim() === "") return PLACEHOLDER_AVATAR;
-  if (path.startsWith("http")) return path;
-  return `${API_BASE_URL}${path}`;
-}
-
+/**
+ * Formater une date en français
+ */
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
   return date.toLocaleDateString("fr-FR", {
@@ -84,8 +40,9 @@ function formatDate(dateString: string): string {
   });
 }
 
-// ==================== RENDER CONTENT ====================
-
+/**
+ * Rendre le contenu markdown simplifié
+ */
 function renderContent(content: string): React.ReactNode {
   const lines = content.trim().split("\n");
   const elements: React.ReactNode[] = [];
@@ -99,7 +56,7 @@ function renderContent(content: string): React.ReactNode {
           className="text-neutral-700 leading-relaxed mb-6"
         >
           {currentParagraph.join(" ")}
-        </p>
+        </p>,
       );
       currentParagraph = [];
     }
@@ -117,7 +74,7 @@ function renderContent(content: string): React.ReactNode {
           className="text-xl font-bold text-neutral-900 mt-10 mb-4"
         >
           {title}
-        </h2>
+        </h2>,
       );
     } else if (trimmedLine === "") {
       flushParagraph();
@@ -137,37 +94,25 @@ export default function ArticleDetailPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  // Récupérer le slug depuis les params
   const { slug } = use(params);
+
+  // État local pour le bouton copier
   const [copied, setCopied] = useState(false);
-  const [article, setArticle] = useState<ArticleDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Fetch article
-  const fetchArticle = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  // Utiliser le hook centralisé
+  const { article, isLoading, error, fetchArticleBySlug } = useArticles();
 
-    try {
-      console.log("Fetching article with slug:", slug);
-      const data = await get<ArticleDetail>(
-        ARTICLES_ENDPOINTS.DETAIL(slug),
-        false
-      );
-      console.log("Article data received:", data);
-      setArticle(data);
-    } catch (err) {
-      console.error("Error fetching article:", err);
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [slug]);
+  // ==================== EFFECTS ====================
 
   // Charger l'article au montage
   useEffect(() => {
-    fetchArticle();
-  }, [fetchArticle]);
+    if (slug) {
+      fetchArticleBySlug(slug);
+    }
+  }, [slug, fetchArticleBySlug]);
+
+  // ==================== HANDLERS ====================
 
   // Copy link handler
   const handleCopyLink = () => {

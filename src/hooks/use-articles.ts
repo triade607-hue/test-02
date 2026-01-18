@@ -1,7 +1,9 @@
 "use client";
 
 // ============================================================
-// HOOK useArticles - Gestion des articles
+// HOOK useArticles - Gestion des articles (CORRIGÉ)
+// ============================================================
+// FIX: isLoading initialisé à true pour éviter le flash 404
 // ============================================================
 
 import { useState, useCallback } from "react";
@@ -24,7 +26,7 @@ const initialState: ExtendedArticlesState = {
   articles: [],
   article: null,
   categories: [],
-  isLoading: false,
+  isLoading: true, // ← FIX: Était 'false', maintenant 'true'
   error: null,
   pagination: {
     page: 0,
@@ -98,7 +100,7 @@ export function useArticles(): UseArticlesReturn {
         setError(handleError(err));
       }
     },
-    [setError, handleError]
+    [setError, handleError],
   );
 
   // ==================== FETCH ARTICLE BY SLUG ====================
@@ -125,7 +127,7 @@ export function useArticles(): UseArticlesReturn {
         return null;
       }
     },
-    [setError, handleError]
+    [setError, handleError],
   );
 
   // ==================== FETCH LATEST ARTICLES ====================
@@ -152,7 +154,7 @@ export function useArticles(): UseArticlesReturn {
         return [];
       }
     },
-    [setError, handleError]
+    [setError, handleError],
   );
 
   // ==================== FETCH CATEGORIES ====================
