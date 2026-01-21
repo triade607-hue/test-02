@@ -20,14 +20,14 @@ const PLACEHOLDER_AVATAR = "/images/placeholder-avatar.png";
  *
  * @example
  * ```tsx
- * const imageUrl = getImageUrl(article.featuredImage);
+ * const imageUrl = getFileUrl(article.featuredImage);
  * // Si featuredImage = "/files/post-images/123.jpg"
  * // Retourne: "https://staging-api.imo2tun.org/files/post-images/123.jpg"
  *
  * <Image src={imageUrl} alt="Article" />
  * ```
  */
-export function getImageUrl(path: string | null | undefined): string {
+export function getFileUrl(path: string | null | undefined): string {
   // Si pas de path, retourner le placeholder
   if (!path || path.trim() === "") {
     return PLACEHOLDER_IMAGE;
@@ -61,14 +61,14 @@ export function getImageUrl(path: string | null | undefined): string {
  * @returns L'URL complète ou le placeholder avatar
  */
 export function getAvatarUrl(
-  profilePicture: string | null | undefined
+  profilePicture: string | null | undefined,
 ): string {
   // Si pas d'image, retourner le placeholder avatar
   if (!profilePicture || profilePicture.trim() === "") {
     return PLACEHOLDER_AVATAR;
   }
 
-  return getImageUrl(profilePicture);
+  return getFileUrl(profilePicture);
 }
 
 /**

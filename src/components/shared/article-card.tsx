@@ -6,7 +6,7 @@ import { Calendar, Clock, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Article } from "@/types/article.types";
-import { getImageUrl, getAvatarUrl } from "@/lib/utils/image-url";
+import { getFileUrl, getAvatarUrl } from "@/lib/utils/image-url";
 
 interface ArticleCardProps {
   article: Article;
@@ -26,7 +26,7 @@ export function ArticleCard({ article, index = 0 }: ArticleCardProps) {
   };
 
   // Construire les URLs des images
-  const imageUrl = getImageUrl(article.featuredImage);
+  const imageUrl = getFileUrl(article.featuredImage);
   const authorImageUrl = getAvatarUrl(article.authorImage);
 
   return (

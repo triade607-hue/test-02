@@ -20,16 +20,19 @@ import {
 import { NewsletterBanner } from "@/components/layout";
 
 // Data
-import { events, missions } from "@/lib/data";
+import { missions } from "@/lib/data";
 
-// Hook pour les articles
+// Hooks API
 import { useArticles } from "@/hooks/use-articles";
+import { useEvents } from "@/hooks/use-events";
 
 export default function HomePage() {
-  // Get upcoming events (max 3)
-  const upcomingEvents = events
-    .filter((e) => e.status === "upcoming")
-    .slice(0, 3);
+  // Hook pour les événements
+  const {
+    events: upcomingEvents,
+    isLoading: isLoadingEvents,
+    fetchUpcomingEvents,
+  } = useEvents();
 
   // Hook pour les articles
   const {
@@ -38,10 +41,11 @@ export default function HomePage() {
     fetchLatestArticles,
   } = useArticles();
 
-  // Charger les 3 derniers articles
+  // Charger les données au montage
   useEffect(() => {
+    fetchUpcomingEvents(3);
     fetchLatestArticles(3);
-  }, [fetchLatestArticles]);
+  }, [fetchUpcomingEvents, fetchLatestArticles]);
 
   return (
     <>
@@ -85,7 +89,11 @@ export default function HomePage() {
             subtitle="Participez à nos conférences, ateliers et meetups pour développer vos compétences et votre réseau."
           />
 
-          {upcomingEvents.length > 0 ? (
+          {isLoadingEvents ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+            </div>
+          ) : upcomingEvents.length > 0 ? (
             <>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {upcomingEvents.map((event, index) => (

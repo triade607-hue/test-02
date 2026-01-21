@@ -4,6 +4,7 @@
 
 // ==================== AUTH & PROFIL ====================
 export * from "./auth.types";
+
 export * from "./profile.types";
 
 // ==================== ARTICLES ====================
@@ -15,7 +16,8 @@ export * from "./contact.types";
 // ==================== DASHBOARD ====================
 export * from "./dashboard.types";
 
-// ==================== TYPES LEGACY (à migrer progressivement) ====================
+export * from "./event.types";
+
 
 export interface Event {
   id: string;

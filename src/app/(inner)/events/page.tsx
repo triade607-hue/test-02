@@ -1,64 +1,91 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { ChevronRight, ChevronLeft, Search } from "lucide-react";
+import { ChevronRight, ChevronLeft, Search, Loader2 } from "lucide-react";
 
 // Components
 import { HeroSecondary } from "@/components/shared/hero-secondary";
 import { EventCard } from "@/components/shared/event-card";
 
-// Data
-import { events } from "@/lib/data";
+// Hooks
+import { useEvents } from "@/hooks/use-events";
+
+// Types
+import type { EventType, EventFormat } from "@/types/event.types";
 
 // Constants
 const EVENTS_PER_PAGE = 9;
-const EVENT_TYPES = [
-  "Tous",
-  "Conférence",
-  "Formation",
-  "Meetup",
-  "Workshop",
-  "Hackathon",
+
+const EVENT_TYPES: { value: EventType | "all"; label: string }[] = [
+  { value: "all", label: "Tous les types" },
+  { value: "CONFERENCE", label: "Conférence" },
+  { value: "FORMATION", label: "Formation" },
+  { value: "MEETUP", label: "Meetup" },
+  { value: "WORKSHOP", label: "Workshop" },
+  { value: "HACKATHON", label: "Hackathon" },
+  { value: "WEBINAR", label: "Webinaire" },
 ];
-const EVENT_CATEGORIES = [
-  "Toutes",
-  "Tech",
-  "Cloud",
-  "Data",
-  "IA",
-  "Cybersécurité",
-  "Design",
+
+const EVENT_FORMATS: { value: EventFormat | "all"; label: string }[] = [
+  { value: "all", label: "Tous les formats" },
+  { value: "PHYSICAL", label: "Présentiel" },
+  { value: "ONLINE", label: "En ligne" },
+  { value: "HYBRID", label: "Hybride" },
 ];
 
 export default function EventsPage() {
+  // Hook pour les événements
+  const {
+    events,
+    categories,
+    isLoading,
+    error,
+    fetchEvents,
+    fetchCategories,
+  } = useEvents();
+
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedType, setSelectedType] = useState("Tous");
-  const [selectedCategory, setSelectedCategory] = useState("Toutes");
+  const [selectedType, setSelectedType] = useState<EventType | "all">("all");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedFormat, setSelectedFormat] = useState<EventFormat | "all">(
+    "all",
+  );
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Charger les données au montage
+  useEffect(() => {
+    fetchEvents({ size: 50 }); // Charger plus pour la pagination client-side
+    fetchCategories();
+  }, [fetchEvents, fetchCategories]);
 
   // Filter events
   const filteredEvents = useMemo(() => {
     return events.filter((event) => {
       // Search filter
       const matchesSearch =
+        searchQuery === "" ||
         event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.description.toLowerCase().includes(searchQuery.toLowerCase());
+        event.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.location.toLowerCase().includes(searchQuery.toLowerCase());
 
       // Type filter
-      const matchesType =
-        selectedType === "Tous" || event.category === selectedType;
+      const matchesType = selectedType === "all" || event.type === selectedType;
 
-      // Category filter (using category field for demo)
+      // Category filter
       const matchesCategory =
-        selectedCategory === "Toutes" || event.category === selectedCategory;
+        selectedCategory === "all" || event.category.slug === selectedCategory;
 
-      return matchesSearch && matchesType && matchesCategory;
+      // Format filter
+      const matchesFormat =
+        selectedFormat === "all" || event.format === selectedFormat;
+
+      return matchesSearch && matchesType && matchesCategory && matchesFormat;
     });
-  }, [searchQuery, selectedType, selectedCategory]);
+  }, [events, searchQuery, selectedType, selectedCategory, selectedFormat]);
 
   // Pagination
   const totalPages = Math.ceil(filteredEvents.length / EVENTS_PER_PAGE);
@@ -68,11 +95,20 @@ export default function EventsPage() {
   }, [filteredEvents, currentPage]);
 
   // Reset to page 1 when filters change
-  const handleFilterChange = (
-    setter: React.Dispatch<React.SetStateAction<string>>,
-    value: string
+  const handleFilterChange = <T,>(
+    setter: React.Dispatch<React.SetStateAction<T>>,
+    value: T,
   ) => {
     setter(value);
+    setCurrentPage(1);
+  };
+
+  // Reset filters
+  const resetFilters = () => {
+    setSearchQuery("");
+    setSelectedType("all");
+    setSelectedCategory("all");
+    setSelectedFormat("all");
     setCurrentPage(1);
   };
 
@@ -155,13 +191,16 @@ export default function EventsPage() {
                 <select
                   value={selectedType}
                   onChange={(e) =>
-                    handleFilterChange(setSelectedType, e.target.value)
+                    handleFilterChange(
+                      setSelectedType,
+                      e.target.value as EventType | "all",
+                    )
                   }
                   className="appearance-none w-full sm:w-40 px-3 sm:px-4 py-2.5 pr-8 sm:pr-10 border border-neutral-200 rounded-md text-xs sm:text-sm bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent cursor-pointer"
                 >
                   {EVENT_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {type === "Tous" ? "Type" : type}
+                    <option key={type.value} value={type.value}>
+                      {type.label}
                     </option>
                   ))}
                 </select>
@@ -177,9 +216,31 @@ export default function EventsPage() {
                   }
                   className="appearance-none w-full sm:w-48 px-3 sm:px-4 py-2.5 pr-8 sm:pr-10 border border-neutral-200 rounded-md text-xs sm:text-sm bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent cursor-pointer"
                 >
-                  {EVENT_CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat === "Toutes" ? "Catégorie" : cat}
+                  <option value="all">Toutes catégories</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.slug}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronRight className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 rotate-90 pointer-events-none" />
+              </div>
+
+              {/* Format Filter */}
+              <div className="relative col-span-1">
+                <select
+                  value={selectedFormat}
+                  onChange={(e) =>
+                    handleFilterChange(
+                      setSelectedFormat,
+                      e.target.value as EventFormat | "all",
+                    )
+                  }
+                  className="appearance-none w-full sm:w-40 px-3 sm:px-4 py-2.5 pr-8 sm:pr-10 border border-neutral-200 rounded-md text-xs sm:text-sm bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent cursor-pointer"
+                >
+                  {EVENT_FORMATS.map((format) => (
+                    <option key={format.value} value={format.value}>
+                      {format.label}
                     </option>
                   ))}
                 </select>
@@ -192,75 +253,96 @@ export default function EventsPage() {
         {/* Events Grid */}
         <section className="py-12 lg:py-16">
           <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12">
-            {paginatedEvents.length > 0 ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {paginatedEvents.map((event, index) => (
-                  <EventCard key={event.id} event={event} index={index} />
-                ))}
+            {/* Loading */}
+            {isLoading && (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
               </div>
-            ) : (
+            )}
+
+            {/* Error */}
+            {error && (
               <div className="text-center py-16">
-                <p className="text-neutral-500 text-lg">
-                  Aucun événement trouvé pour ces critères.
-                </p>
+                <p className="text-red-500 mb-4">{error}</p>
                 <button
-                  onClick={() => {
-                    setSearchQuery("");
-                    setSelectedType("Tous");
-                    setSelectedCategory("Toutes");
-                  }}
-                  className="mt-4 text-primary-600 font-medium hover:underline"
+                  onClick={() => fetchEvents()}
+                  className="text-primary-600 font-medium hover:underline"
                 >
-                  Réinitialiser les filtres
+                  Réessayer
                 </button>
               </div>
             )}
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-12">
-                {/* Previous Button */}
-                <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(prev - 1, 1))
-                  }
-                  disabled={currentPage === 1}
-                  className="w-10 h-10 flex items-center justify-center rounded-md border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
+            {/* Events */}
+            {!isLoading && !error && (
+              <>
+                {paginatedEvents.length > 0 ? (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {paginatedEvents.map((event, index) => (
+                      <EventCard key={event.id} event={event} index={index} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-16">
+                    <p className="text-neutral-500 text-lg">
+                      Aucun événement trouvé pour ces critères.
+                    </p>
+                    <button
+                      onClick={resetFilters}
+                      className="mt-4 text-primary-600 font-medium hover:underline"
+                    >
+                      Réinitialiser les filtres
+                    </button>
+                  </div>
+                )}
 
-                {/* Page Numbers */}
-                {getPageNumbers().map((page, index) => (
-                  <button
-                    key={index}
-                    onClick={() =>
-                      typeof page === "number" && setCurrentPage(page)
-                    }
-                    disabled={page === "..."}
-                    className={`w-10 h-10 flex items-center justify-center rounded-md text-sm font-medium transition-colors ${
-                      page === currentPage
-                        ? "bg-secondary-500 text-white"
-                        : page === "..."
-                          ? "bg-transparent text-neutral-400 cursor-default"
-                          : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-12">
+                    {/* Previous Button */}
+                    <button
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
+                      disabled={currentPage === 1}
+                      className="w-10 h-10 flex items-center justify-center rounded-md border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
 
-                {/* Next Button */}
-                <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                  }
-                  disabled={currentPage === totalPages}
-                  className="w-10 h-10 flex items-center justify-center rounded-md bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
+                    {/* Page Numbers */}
+                    {getPageNumbers().map((page, index) => (
+                      <button
+                        key={index}
+                        onClick={() =>
+                          typeof page === "number" && setCurrentPage(page)
+                        }
+                        disabled={page === "..."}
+                        className={`w-10 h-10 flex items-center justify-center rounded-md text-sm font-medium transition-colors ${
+                          page === currentPage
+                            ? "bg-secondary-500 text-white"
+                            : page === "..."
+                              ? "bg-transparent text-neutral-400 cursor-default"
+                              : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+
+                    {/* Next Button */}
+                    <button
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                      }
+                      disabled={currentPage === totalPages}
+                      className="w-10 h-10 flex items-center justify-center rounded-md bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </section>

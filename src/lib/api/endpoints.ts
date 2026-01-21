@@ -58,12 +58,11 @@ export const USER_ENDPOINTS = {
  * Endpoints événements
  */
 export const EVENTS_ENDPOINTS = {
-  LIST: "/api/events",
-  DETAIL: (slug: string) => `/api/events/${slug}`,
-  REGISTER: (id: string) => `/api/events/${id}/register`,
-  UNREGISTER: (id: string) => `/api/events/${id}/unregister`,
-  MY_EVENTS: "/api/user/events",
-} as const;
+  LIST: "/api/public/events",
+  DETAIL: (slug: string) => `/api/public/events/${slug}`,
+  CATEGORIES: "/api/public/events/categories",
+  REGISTER: (eventId: string) => `/api/public/events/${eventId}/register`,
+};
 
 /**
  * Endpoints articles / actualités

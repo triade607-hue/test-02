@@ -31,7 +31,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useProfile } from "@/hooks/use-profile";
 
 // Utils
-import { getImageUrl } from "@/lib/utils/image-url";
+import { getFileUrl } from "@/lib/utils/image-url";
 
 // ============================================================
 // CONFIGURATION DES TIERS
@@ -150,7 +150,7 @@ export default function MonProfilPage() {
   // ==================== HANDLERS ====================
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -191,7 +191,7 @@ export default function MonProfilPage() {
    * Envoie directement le File au hook
    */
   const handlePictureUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -222,7 +222,7 @@ export default function MonProfilPage() {
       ? `${profile.countryCode || "+229"} ${profile.phone}`
       : "",
     bio: profile?.bio || "",
-    profilePicture: getImageUrl(profile?.profilePicture),
+    profilePicture: getFileUrl(profile?.profilePicture),
     // Membership - de l'API user
     isFreemium,
     tier: tierConfig?.label || null,

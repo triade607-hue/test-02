@@ -24,7 +24,7 @@ import { HeroSecondary } from "@/components/shared/hero-secondary";
 import { useArticles } from "@/hooks/use-articles";
 
 // Utilitaires centralisés
-import { getImageUrl, getAvatarUrl } from "@/lib/utils/image-url";
+import { getFileUrl, getAvatarUrl } from "@/lib/utils/image-url";
 
 // ==================== HELPERS ====================
 
@@ -156,7 +156,7 @@ export default function ArticleDetailPage({
   }
 
   // URLs des images
-  const imageUrl = getImageUrl(article.featuredImage);
+  const imageUrl = getFileUrl(article.featuredImage);
   const authorImageUrl = getAvatarUrl(article.authorImage);
 
   return (
@@ -364,7 +364,7 @@ export default function ArticleDetailPage({
                             {/* Thumbnail */}
                             <div className="relative w-24 h-20 rounded-md overflow-hidden flex-shrink-0">
                               <Image
-                                src={getImageUrl(relatedArticle.featuredImage)}
+                                src={getFileUrl(relatedArticle.featuredImage)}
                                 alt={relatedArticle.title}
                                 fill
                                 className="object-cover group-hover:scale-105 transition-transform duration-300"
