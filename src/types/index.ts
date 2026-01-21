@@ -1,12 +1,23 @@
-// ============================================
-// TYPES PRINCIPAUX - IMO2TUN
-// ============================================
 // ============================================================
 // TYPES - imo2tun
 // ============================================================
 
+// ==================== AUTH & PROFIL ====================
 export * from "./auth.types";
+
 export * from "./profile.types";
+
+// ==================== ARTICLES ====================
+export * from "./article.types";
+
+// ==================== CONTACT (NOUVEAU) ====================
+export * from "./contact.types";
+
+// ==================== DASHBOARD ====================
+export * from "./dashboard.types";
+
+export * from "./event.types";
+
 
 export interface Event {
   id: string;
@@ -23,6 +34,7 @@ export interface Event {
   capacity?: number;
   registeredCount?: number;
 }
+
 export interface Speaker {
   id: string;
   name: string;
@@ -40,20 +52,6 @@ export interface ScheduleItem {
   description?: string;
   type: "conference" | "workshop" | "break" | "networking";
   speakers?: Speaker[];
-}
-
-export interface Article {
-  id: string;
-  slug: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  image: string;
-  category: string;
-  author: Author;
-  publishedAt: string;
-  readTime: number;
-  tags: string[];
 }
 
 export interface Author {
@@ -124,4 +122,3 @@ export interface TeamMember {
     linkedin?: string;
   };
 }
-

@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils/format-validation";
 import { NAV_LINKS } from "@/lib/constants";
 import { Button } from "@/components/ui";
-import { UserMenu } from "./user-menu";
+import { UserMenu, UserMenuMobile } from "./user-menu";
 
 export function HeaderSecondary() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -41,7 +41,7 @@ export function HeaderSecondary() {
       <header
         className={cn(
           "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-          isScrolled ? "bg-white shadow-md" : "bg-transparent"
+          isScrolled ? "bg-white shadow-md" : "bg-transparent",
         )}
       >
         <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12">
@@ -75,7 +75,7 @@ export function HeaderSecondary() {
                         : // État transparent (fond image)
                           isActive(link.href)
                           ? "text-white font-semibold"
-                          : "text-white font-semibold hover:text-white/80"
+                          : "text-white font-semibold hover:text-white/80",
                     )}
                   >
                     {link.label}
@@ -90,7 +90,7 @@ export function HeaderSecondary() {
               <div
                 className={cn(
                   "h-8 w-px transition-colors duration-300",
-                  isScrolled ? "bg-neutral-200" : "bg-white/30"
+                  isScrolled ? "bg-neutral-200" : "bg-white/30",
                 )}
               />
 
@@ -103,7 +103,7 @@ export function HeaderSecondary() {
                   variant={isScrolled ? "primary" : "primary"}
                   className={cn(
                     "rounded-md transition-all duration-300 focus:outline-none focus:ring-0 focus:ring-offset-0 active:outline-none active:ring-0",
-                    !isScrolled && "bg-secondary-500 hover:bg-secondary-600"
+                    !isScrolled && "bg-secondary-500 hover:bg-secondary-600",
                   )}
                   size="md"
                 >
@@ -116,7 +116,7 @@ export function HeaderSecondary() {
             <button
               className={cn(
                 "lg:hidden p-2 rounded-lg transition-colors",
-                isScrolled ? "hover:bg-neutral-100" : "hover:bg-white/10"
+                isScrolled ? "hover:bg-neutral-100" : "hover:bg-white/10",
               )}
               onClick={() => setIsMobileMenuOpen(true)}
               aria-label="Ouvrir le menu"
@@ -124,7 +124,7 @@ export function HeaderSecondary() {
               <Menu
                 className={cn(
                   "w-6 h-6 transition-colors duration-300",
-                  isScrolled ? "text-neutral-700" : "text-white"
+                  isScrolled ? "text-neutral-700" : "text-white",
                 )}
               />
             </button>
@@ -186,7 +186,7 @@ export function HeaderSecondary() {
                         "relative text-[15px] py-3 transition-colors",
                         isActive(link.href)
                           ? "text-[#F9A825] font-semibold"
-                          : "text-neutral-900 font-semibold hover:text-[#F9A825]"
+                          : "text-neutral-900 font-semibold hover:text-[#F9A825]",
                       )}
                     >
                       {link.label}
@@ -195,39 +195,13 @@ export function HeaderSecondary() {
                       )}
                     </Link>
                   ))}
-
-                  {/* Liens Auth */}
-                  <Link
-                    href="/login"
-                    onClick={closeMobileMenu}
-                    className={cn(
-                      "relative text-[15px] py-3 transition-colors",
-                      isActive("/login")
-                        ? "text-[#F9A825] font-semibold"
-                        : "text-neutral-900 font-semibold hover:text-[#F9A825]"
-                    )}
-                  >
-                    Se connecter
-                    {isActive("/login") && (
-                      <span className="absolute bottom-2 left-0 w-8 h-[2px] bg-[#F9A825] rounded-full" />
-                    )}
-                  </Link>
-                  <Link
-                    href="/register"
-                    onClick={closeMobileMenu}
-                    className={cn(
-                      "relative text-[15px] py-3 transition-colors",
-                      isActive("/register")
-                        ? "text-[#F9A825] font-semibold"
-                        : "text-neutral-900 font-semibold hover:text-[#F9A825]"
-                    )}
-                  >
-                    S&apos;inscrire
-                    {isActive("/register") && (
-                      <span className="absolute bottom-2 left-0 w-8 h-[2px] bg-[#F9A825] rounded-full" />
-                    )}
-                  </Link>
                 </div>
+
+                {/* Séparateur */}
+                <div className="my-6 border-t border-neutral-100" />
+
+                {/* Menu utilisateur dynamique (connecté ou non) */}
+                <UserMenuMobile onClose={closeMobileMenu} />
               </nav>
 
               {/* Sidebar Footer */}

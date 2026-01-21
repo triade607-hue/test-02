@@ -1,6 +1,8 @@
 // ============================================================
-// HOOKS D'AUTHENTIFICATION - imo2tun
+// HOOKS - imo2tun
 // ============================================================
+
+// ==================== HOOKS D'AUTHENTIFICATION ====================
 
 // Hook principal
 export { useAuth, default as useAuthHook } from "./use-auth";
@@ -18,8 +20,18 @@ export {
   default as useSetupAccountHook,
 } from "./use-setup-account";
 
-// Hook de redirection (NOUVEAU)
+// Hook de redirection
 export {
   useRedirectIfAuthenticated,
   default as useRedirectIfAuthenticatedHook,
 } from "./use-redirect-if-authenticated";
+
+// ==================== HOOKS MÉTIER ====================
+
+// Hook articles
+export { useArticles, default as useArticlesHook } from "./use-articles";
+
+// Hook contact (NOUVEAU)
+export { useContact, default as useContactHook } from "./use-contact";
+
+export { useEvents } from "./use-events";

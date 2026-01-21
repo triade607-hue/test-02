@@ -10,7 +10,7 @@ export const memberTypes = [
     id: "utilisateur",
     label: "UTILISATEURS",
     description:
-      "Un Membre Utilisateur (MU) est une organisation (entreprise, ONG, institution) qui souhaite bénéficier des services et expertises de notre réseau pour accompagner sa transformation digitale.",
+      "Un Membre Utilisateur (MU) est une organisation à but lucratif qui souhaite bénéficier des services et expertises de notre réseau pour accompagner sa transformation digitale.",
   },
   {
     id: "contributeur",

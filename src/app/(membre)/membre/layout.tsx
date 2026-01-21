@@ -21,7 +21,7 @@ import {
   Crown,
 } from "lucide-react";
 import { cn } from "@/lib/utils/format-validation";
-import { getImageUrl } from "@/lib/utils/image-url";
+import { getFileUrl } from "@/lib/utils/image-url";
 
 // Auth
 import { useAuth } from "@/hooks/use-auth";
@@ -121,7 +121,7 @@ export default function MembreLayout({
     firstName: user?.firstName || "Membre",
     lastName: user?.lastName || "",
     email: user?.email || "",
-    avatar: getImageUrl(user?.profilePicture),
+    avatar: getFileUrl(user?.profilePicture),
     // Membership - Freemium ou Membre
     isFreemium,
     tier: tierConfig?.label || null,
@@ -225,7 +225,7 @@ export default function MembreLayout({
                     "flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium transition-all",
                     isActive(item.href)
                       ? "bg-primary-50 text-primary-600"
-                      : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+                      : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900",
                   )}
                 >
                   <item.icon className="w-5 h-5" />
@@ -350,7 +350,7 @@ export default function MembreLayout({
                         "flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium transition-all",
                         isActive(item.href)
                           ? "bg-primary-50 text-primary-600"
-                          : "text-neutral-600 hover:bg-neutral-50"
+                          : "text-neutral-600 hover:bg-neutral-50",
                       )}
                     >
                       <item.icon className="w-5 h-5" />

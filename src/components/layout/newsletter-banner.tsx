@@ -2,28 +2,41 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Send, CheckCircle, Loader2 } from "lucide-react";
+import { Send, CheckCircle, Loader2, AlertCircle } from "lucide-react";
+
+// Hook
+import { useContact } from "@/hooks/use-contact";
 
 export function NewsletterBanner() {
+  // État local pour le formulaire
   const [formData, setFormData] = useState({ name: "", email: "" });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
 
+  // Hook pour la newsletter
+  const {
+    isSubmitting,
+    isSuccess,
+    error,
+    successMessage,
+    subscribeNewsletter,
+    reset,
+  } = useContact();
+
+  // Soumettre le formulaire
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
-    // Simulation d'envoi
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const success = await subscribeNewsletter({
+      name: formData.name,
+      email: formData.email,
+    });
 
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-
-    // Reset après 3 secondes
-    setTimeout(() => {
-      setIsSubmitted(false);
-      setFormData({ name: "", email: "" });
-    }, 3000);
+    if (success) {
+      // Reset form après succès
+      setTimeout(() => {
+        reset();
+        setFormData({ name: "", email: "" });
+      }, 5000);
+    }
   };
 
   return (
@@ -106,8 +119,20 @@ export function NewsletterBanner() {
             actualités et événements.
           </p>
 
+          {/* Message d'erreur */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center justify-center gap-2 mb-6 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm max-w-xl mx-auto"
+            >
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <span>{error}</span>
+            </motion.div>
+          )}
+
           {/* Formulaire */}
-          {!isSubmitted ? (
+          {!isSuccess ? (
             <motion.form
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -179,7 +204,7 @@ export function NewsletterBanner() {
                 Merci pour votre inscription !
               </p>
               <p className="text-neutral-600 text-sm">
-                Vous recevrez bientôt nos actualités.
+                {successMessage || "Vous recevrez bientôt nos actualités."}
               </p>
             </motion.div>
           )}

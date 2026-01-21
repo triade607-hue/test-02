@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, use } from "react";
-import { notFound } from "next/navigation";
+import { useState, useEffect, use } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ChevronRight,
   Calendar,
@@ -12,118 +12,28 @@ import {
   MapPin,
   Users,
   Share2,
-  CalendarPlus,
-  ChevronDown,
+  Download,
+  Loader2,
+  AlertCircle,
+  Euro,
+  Linkedin,
 } from "lucide-react";
 
 // Components
 import { HeroSecondary } from "@/components/shared/hero-secondary";
 import { EventCard } from "@/components/shared/event-card";
-import { EventRegistrationModal } from "@/components/shared/event-registration-modal";
 import { Button } from "@/components/ui";
 
-// Data
-import { events } from "@/lib/data";
+// Hooks
+import { useEvents } from "@/hooks/use-events";
+import { useAuth } from "@/hooks/use-auth";
+
+// Services & API
+import { eventsService } from "@/lib/services/events.service";
+import { getFileUrl } from "@/lib/utils/image-url";
 
 // Types
-import { Speaker, ScheduleItem } from "@/types";
-
-// ============================================
-// DONNÉES STATIQUES POUR LA DÉMO
-// ============================================
-
-const DEMO_SPEAKERS: Speaker[] = [
-  {
-    id: "1",
-    name: "Anne DOE",
-    role: "Senior Developer",
-    company: "Tech Corp",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&q=80",
-  },
-  {
-    id: "2",
-    name: "Jean DUPONT",
-    role: "Data Scientist",
-    company: "Data Inc",
-    avatar:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80",
-  },
-  {
-    id: "3",
-    name: "Marie CLAIRE",
-    role: "UX Designer",
-    company: "Design Studio",
-    avatar:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&q=80",
-  },
-  {
-    id: "4",
-    name: "Paul MARTIN",
-    role: "Cloud Architect",
-    company: "Cloud Solutions",
-    avatar:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&q=80",
-  },
-];
-
-const DEMO_SCHEDULE: ScheduleItem[] = [
-  {
-    id: "1",
-    time: "08:00",
-    endTime: "08:45",
-    title: "Petit déjeuner",
-    description:
-      "Accueil des participants avec café, thé et viennoiseries. Moment de networking informel.",
-    type: "break",
-  },
-  {
-    id: "2",
-    time: "09:00",
-    endTime: "10:00",
-    title: "Atelier",
-    description:
-      "Somos uma empresa orgulhosamente mineira, que desde 2006 atua exclusivamente no segmento de sistema de gestão escolar. Somos uma empresa orgulhosamente mineira, que desde 2006 atua exclusivamente no segmento de sistema de gestão escolar.",
-    type: "workshop",
-    speakers: DEMO_SPEAKERS.slice(0, 3),
-  },
-  {
-    id: "3",
-    time: "10:00",
-    endTime: "10:45",
-    title: "Atelier",
-    description:
-      "Session pratique sur les outils et méthodologies modernes de développement.",
-    type: "workshop",
-  },
-  {
-    id: "4",
-    time: "11:00",
-    endTime: "12:00",
-    title: "Atelier",
-    description:
-      "Approfondissement des concepts avec exercices pratiques en groupe.",
-    type: "workshop",
-  },
-  {
-    id: "5",
-    time: "12:00",
-    endTime: "13:30",
-    title: "Pause déjeuner",
-    description:
-      "Déjeuner offert sur place. Opportunité de networking avec les intervenants.",
-    type: "break",
-  },
-  {
-    id: "6",
-    time: "14:00",
-    endTime: "15:00",
-    title: "Conférence",
-    description:
-      "Présentation des dernières tendances et innovations du secteur par nos experts.",
-    type: "conference",
-  },
-];
+import type { EventSpeaker } from "@/types/event.types";
 
 // ============================================
 // PAGE COMPONENT
@@ -135,19 +45,64 @@ export default function EventDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = use(params);
-  const [openScheduleId, setOpenScheduleId] = useState<string | null>("2");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { isAuthenticated } = useAuth();
+  const [isRegistering, setIsRegistering] = useState(false);
 
-  // Trouver l'événement par slug
-  const event = events.find((e) => e.slug === slug);
+  // Hook pour les événements
+  const { event, events, isLoading, error, fetchEventBySlug, fetchEvents } =
+    useEvents();
 
-  if (!event) {
-    notFound();
-  }
+  // Charger l'événement au montage
+  useEffect(() => {
+    if (slug) {
+      fetchEventBySlug(slug);
+      fetchEvents({ size: 10 }); // Pour les événements similaires
+    }
+  }, [slug, fetchEventBySlug, fetchEvents]);
+
+  // Gérer l'inscription automatique après login
+  useEffect(() => {
+    const handlePendingRegistration = async () => {
+      const pendingEventId = localStorage.getItem("pendingEventRegistration");
+      const action = searchParams.get("action");
+
+      if (
+        isAuthenticated &&
+        pendingEventId &&
+        action === "register" &&
+        event &&
+        pendingEventId === event.id
+      ) {
+        // Nettoyer le localStorage
+        localStorage.removeItem("pendingEventRegistration");
+
+        // Effectuer l'inscription
+        try {
+          setIsRegistering(true);
+          const response = await eventsService.registerToEvent(event.id);
+
+          if (response.paymentRedirectUrl) {
+            window.location.href = response.paymentRedirectUrl;
+          }
+        } catch (error) {
+          console.error("Erreur lors de l'inscription automatique:", error);
+        } finally {
+          setIsRegistering(false);
+        }
+      }
+    };
+
+    handlePendingRegistration();
+  }, [isAuthenticated, event, searchParams]);
 
   // Événements similaires (même catégorie, exclure l'actuel)
   const similarEvents = events
-    .filter((e) => e.category === event.category && e.id !== event.id)
+    .filter(
+      (e) =>
+        event && e.category.slug === event.category.slug && e.id !== event.id,
+    )
     .slice(0, 3);
 
   // Format date
@@ -159,6 +114,73 @@ export default function EventDetailPage({
       year: "numeric",
     });
   };
+
+  // Format time
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  // Handle inscription
+  const handleRegister = async () => {
+    if (!event) return;
+
+    // Si non connecté → sauvegarder l'intention et rediriger vers login
+    if (!isAuthenticated) {
+      localStorage.setItem("pendingEventRegistration", event.id);
+      router.push(`/login?redirect=/events/${slug}&action=register`);
+      return;
+    }
+
+    // Si connecté → appeler l'API d'inscription
+    try {
+      setIsRegistering(true);
+      const response = await eventsService.registerToEvent(event.id);
+
+      // Rediriger vers la page de paiement
+      if (response.paymentRedirectUrl) {
+        window.location.href = response.paymentRedirectUrl;
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'inscription:", error);
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !event) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-50 px-6">
+        <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
+        <h1 className="text-2xl font-bold text-neutral-900 mb-2">
+          Événement non trouvé
+        </h1>
+        <p className="text-neutral-600 mb-6 text-center">
+          {error || "Cet événement n'existe pas ou a été supprimé."}
+        </p>
+        <Link href="/events">
+          <Button variant="primary">Retour aux événements</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  // URLs complètes avec Base URL
+  const bannerUrl = event.banner ? getFileUrl(event.banner) : null;
+  const programUrl = event.programUrl ? getFileUrl(event.programUrl) : null;
 
   return (
     <>
@@ -204,7 +226,7 @@ export default function EventDetailPage({
       <main className="bg-neutral-50 py-12">
         <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12">
           <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
-            {/* Sidebar gauche - Infos événement (sans carte) */}
+            {/* Sidebar gauche - Infos événement */}
             <div className="lg:col-span-1">
               <div className="sticky top-24 space-y-5">
                 {/* Date */}
@@ -212,236 +234,212 @@ export default function EventDetailPage({
                   <div className="w-10 h-10 bg-primary-100 rounded-md flex items-center justify-center">
                     <Calendar className="w-5 h-5 text-primary-600" />
                   </div>
-                  <span className="text-neutral-800 font-medium">
-                    {formatDate(event.date)}
-                  </span>
+                  <div>
+                    <p className="text-sm text-neutral-500">Date</p>
+                    <p className="font-semibold text-neutral-900">
+                      {formatDate(event.startDate)}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Heure */}
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-primary-100 rounded-md flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-primary-600" />
+                  <div className="w-10 h-10 bg-secondary-100 rounded-md flex items-center justify-center">
+                    <Clock className="w-5 h-5 text-secondary-600" />
                   </div>
-                  <span className="text-neutral-800 font-medium">
-                    {event.time}
-                  </span>
+                  <div>
+                    <p className="text-sm text-neutral-500">Horaires</p>
+                    <p className="font-semibold text-neutral-900">
+                      {formatTime(event.startDate)} -{" "}
+                      {formatTime(event.endDate)}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Lieu */}
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-primary-100 rounded-md flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-5 h-5 text-primary-600" />
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-accent-100 rounded-md flex items-center justify-center">
+                    <MapPin className="w-5 h-5 text-accent-600" />
                   </div>
-                  <span className="text-neutral-800 font-medium pt-2.5">
-                    {event.location}
-                  </span>
+                  <div>
+                    <p className="text-sm text-neutral-500">Lieu</p>
+                    <p className="font-semibold text-neutral-900">
+                      {event.location}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Places */}
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-primary-100 rounded-md flex items-center justify-center">
-                    <Users className="w-5 h-5 text-primary-600" />
+                  <div className="w-10 h-10 bg-neutral-100 rounded-md flex items-center justify-center">
+                    <Users className="w-5 h-5 text-neutral-600" />
                   </div>
-                  <span className="text-neutral-800 font-medium">
-                    50 places
-                  </span>
+                  <div>
+                    <p className="text-sm text-neutral-500">Places</p>
+                    <p className="font-semibold text-neutral-900">
+                      {event.remainingSeats} / {event.maxAttendees} disponibles
+                    </p>
+                  </div>
                 </div>
 
                 {/* Prix */}
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-accent-100 rounded-md flex items-center justify-center">
-                    <span className="text-accent-600 font-bold text-lg">€</span>
+                  <div className="w-10 h-10 bg-green-100 rounded-md flex items-center justify-center">
+                    <Euro className="w-5 h-5 text-green-600" />
                   </div>
-                  <span className="text-accent-600 font-bold text-lg">
-                    Gratuit
-                  </span>
+                  <div>
+                    <p className="text-sm text-neutral-500">Prix</p>
+                    <p className="font-semibold text-neutral-900">
+                      {event.basePrice === 0
+                        ? "Gratuit"
+                        : `${event.basePrice.toLocaleString("fr-FR")} €`}
+                    </p>
+                  </div>
                 </div>
 
-                {/* Séparateur */}
-                <div className="border-neutral-200 pt-5 mt-2">
+                {/* Séparateur + Bouton inscription */}
+                <div className="border-t border-neutral-200 pt-5">
                   {/* Bouton S'inscrire */}
-                  {event.status === "upcoming" && (
+                  {event.upcoming && event.remainingSeats > 0 && (
                     <Button
                       variant="primary"
-                      className="w-full mb-3"
-                      onClick={() => setIsModalOpen(true)}
+                      className="w-full"
+                      onClick={handleRegister}
+                      disabled={isRegistering}
                     >
-                      S&apos;inscrire
+                      {isRegistering ? "Inscription en cours..." : "S'inscrire"}
                     </Button>
                   )}
 
-                  {/* Ajouter au calendrier */}
-                  <button className="w-full flex items-center justify-center gap-2 py-2.5 border border-neutral-200 rounded-md text-sm font-medium text-neutral-700 hover:bg-white hover:border-neutral-300 transition-colors">
-                    <CalendarPlus className="w-4 h-4" />
-                    Ajouter au calendrier
-                  </button>
+                  {/* Complet */}
+                  {event.upcoming && event.remainingSeats === 0 && (
+                    <div className="w-full py-2.5 bg-neutral-200 text-neutral-600 text-center rounded-md font-medium">
+                      Complet
+                    </div>
+                  )}
+
+                  {/* Événement passé */}
+                  {event.past && (
+                    <div className="w-full py-2.5 bg-neutral-200 text-neutral-600 text-center rounded-md font-medium">
+                      Événement terminé
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Contenu principal */}
             <div className="lg:col-span-2">
-              {/* Titre et description */}
-              <section className="mb-12">
-                <h1 className="text-2xl md:text-3xl font-bold text-neutral-900 mb-6">
-                  {event.title}
-                </h1>
-                <div className="prose prose-neutral max-w-none">
-                  <p className="text-neutral-600 leading-relaxed">
-                    {event.description}
-                  </p>
-                  <p className="text-neutral-600 leading-relaxed mt-4">
-                    Somos uma empresa orgulhosamente mineira, que desde 2006
-                    atua exclusivamente no segmento de sistema de gestão
-                    escolar. Somos uma empresa orgulhosamente mineira, que desde
-                    2006 atua exclusivamente no segmento de sistema de gestão
-                    escolar. Somos uma empresa orgulhosamente mineira, que desde
-                    2006 atua exclusivamente no segmento de sistema de gestão
-                    escolar.
-                  </p>
-                  <p className="text-neutral-600 leading-relaxed mt-4">
-                    Somos uma empresa orgulhosamente mineira, que desde 2006
-                    atua exclusivamente no segmento de sistema de gestão
-                    escolar. Somos uma empresa orgulhosamente mineira, que desde
-                    2006 atua exclusivamente no segmento de sistema de gestão
-                    escolar.
-                  </p>
+              {/* Image bannière */}
+              {bannerUrl && (
+                <div className="relative w-full h-64 md:h-80 rounded-xl overflow-hidden mb-8">
+                  <Image
+                    src={bannerUrl}
+                    alt={event.title}
+                    fill
+                    className="object-cover"
+                  />
                 </div>
+              )}
+
+              {/* Badges catégorie et format */}
+              <div className="flex items-center gap-3 mb-4">
+                <span className="px-3 py-1 bg-primary-100 text-primary-600 text-sm font-medium rounded-full">
+                  {event.category.name}
+                </span>
+                <span className="px-3 py-1 bg-neutral-100 text-neutral-600 text-sm font-medium rounded-full">
+                  {event.format === "PHYSICAL"
+                    ? "Présentiel"
+                    : event.format === "ONLINE"
+                      ? "En ligne"
+                      : "Hybride"}
+                </span>
+              </div>
+
+              {/* Titre */}
+              <h1 className="text-2xl md:text-3xl font-bold text-neutral-900 mb-6">
+                {event.title}
+              </h1>
+
+              {/* Description */}
+              <section className="mb-8">
+                <div
+                  className="prose prose-neutral max-w-none"
+                  dangerouslySetInnerHTML={{ __html: event.description }}
+                />
               </section>
 
-              {/* Programme de l'événement - Tous en dropdown */}
-              <section className="mb-12">
-                <h2 className="text-xl md:text-2xl font-bold text-neutral-900 mb-6">
-                  Programme de l&apos;événement
-                </h2>
-                <div className="space-y-3">
-                  {DEMO_SCHEDULE.map((item) => (
-                    <div
-                      key={item.id}
-                      className="bg-white rounded-md border border-neutral-100 overflow-hidden"
-                    >
-                      {/* Header du dropdown */}
-                      <button
-                        onClick={() =>
-                          setOpenScheduleId(
-                            openScheduleId === item.id ? null : item.id
-                          )
-                        }
-                        className="w-full flex items-center justify-between px-5 py-4 text-left"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2 text-sm text-neutral-500">
-                            <Clock className="w-4 h-4" />
-                            <span>
-                              {item.time} - {item.endTime}
-                            </span>
-                          </div>
-                          <span
-                            className={`font-semibold ${
-                              item.type === "break"
-                                ? "text-neutral-600"
-                                : "text-secondary-500"
-                            }`}
-                          >
-                            {item.title}
-                          </span>
-                        </div>
-                        <ChevronDown
-                          className={`w-5 h-5 text-neutral-400 transition-transform duration-200 ${
-                            openScheduleId === item.id ? "rotate-180" : ""
-                          }`}
-                        />
-                      </button>
-
-                      {/* Contenu expandable */}
-                      <AnimatePresence>
-                        {openScheduleId === item.id && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="px-5 pb-5 py-4 border-t border-neutral-100">
-                              <p className="text-neutral-600 text-sm leading-relaxed">
-                                {item.description}
-                              </p>
-
-                              {/* Speakers */}
-                              {item.speakers && item.speakers.length > 0 && (
-                                <div className="mt-5">
-                                  <p className="text-secondary-500 font-semibold text-sm mb-4">
-                                    Speaker
-                                  </p>
-                                  <div className="flex flex-wrap gap-6">
-                                    {item.speakers.map((speaker) => (
-                                      <div
-                                        key={speaker.id}
-                                        className="flex flex-col items-center"
-                                      >
-                                        <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-secondary-500 mb-2">
-                                          <Image
-                                            src={speaker.avatar}
-                                            alt={speaker.name}
-                                            width={56}
-                                            height={56}
-                                            className="w-full h-full object-cover"
-                                          />
-                                        </div>
-                                        <span className="text-xs font-medium text-neutral-900">
-                                          {speaker.name.split(" ")[0]}
-                                        </span>
-                                        <span className="text-xs text-neutral-500">
-                                          {speaker.role}
-                                        </span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  ))}
-                </div>
-              </section>
+              {/* Bouton Télécharger le programme - Dans le corps après description */}
+              {programUrl && (
+                <section className="mb-12">
+                  <Button
+                    variant="primary"
+                    onClick={() => window.open(programUrl, "_blank")}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Télécharger le programme
+                  </Button>
+                </section>
+              )}
 
               {/* Les Intervenants */}
-              <section className="mb-12">
-                <h2 className="text-xl md:text-2xl font-bold text-neutral-900 mb-6 text-left">
-                  Les Intervenants
-                </h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  {DEMO_SPEAKERS.map((speaker) => (
-                    <motion.div
-                      key={speaker.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      className="text-center"
-                    >
-                      <div className="relative w-24 h-24 mx-auto mb-3">
-                        <div className="w-full h-full rounded-full overflow-hidden border-4 border-secondary-500">
-                          <Image
-                            src={speaker.avatar}
-                            alt={speaker.name}
-                            width={96}
-                            height={96}
-                            className="w-full h-full object-cover"
-                          />
+              {event.allSpeakers && event.allSpeakers.length > 0 && (
+                <section className="mb-12">
+                  <h2 className="text-xl md:text-2xl font-bold text-neutral-900 mb-6 text-left">
+                    Les Intervenants
+                  </h2>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    {event.allSpeakers.map((speaker: EventSpeaker) => (
+                      <motion.div
+                        key={speaker.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="text-center"
+                      >
+                        <div className="relative w-24 h-24 mx-auto mb-3">
+                          <div className="w-full h-full rounded-full overflow-hidden border-4 border-secondary-500">
+                            {speaker.photo ? (
+                              <Image
+                                src={getFileUrl(speaker.photo)}
+                                alt={`${speaker.firstName} ${speaker.lastName}`}
+                                width={96}
+                                height={96}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white font-bold text-xl">
+                                {speaker.firstName[0]}
+                                {speaker.lastName[0]}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <h3 className="font-semibold text-neutral-900">
-                        {speaker.name}
-                      </h3>
-                      <p className="text-sm text-neutral-500">{speaker.role}</p>
-                    </motion.div>
-                  ))}
-                </div>
-              </section>
+                        <h3 className="font-semibold text-neutral-900">
+                          {speaker.firstName} {speaker.lastName}
+                        </h3>
+                        <p className="text-sm text-neutral-500">
+                          {speaker.title}
+                        </p>
+                        <p className="text-xs text-neutral-400">
+                          {speaker.company}
+                        </p>
+                        {speaker.linkedinUrl && (
+                          <a
+                            href={speaker.linkedinUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 mt-2 text-xs text-primary-600 hover:underline"
+                          >
+                            <Linkedin className="w-3 h-3" />
+                            LinkedIn
+                          </a>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                </section>
+              )}
             </div>
           </div>
 
@@ -461,13 +459,6 @@ export default function EventDetailPage({
           )}
         </div>
       </main>
-
-      {/* Modal d'inscription */}
-      <EventRegistrationModal
-        event={event}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
     </>
   );
 }
