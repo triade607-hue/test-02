@@ -2,7 +2,7 @@ import { StatItem } from "@/types";
 
 export const stats: StatItem[] = [
   {
-    value: "500+",
+    value: "100+",
     label: "Membres",
   },
   {
