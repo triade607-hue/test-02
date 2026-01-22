@@ -3,28 +3,24 @@ import { TeamMember } from "@/types";
 export const team: TeamMember[] = [
   {
     id: "1",
-    name: "Anne DOE",
-    role: "Présidente",
+    name: "Eric BOSSOU",
+    role: "Président",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis at consequat sapien. Lorem ipsum dolor sit amet.",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&q=80",
+    avatar: "/images/teams/eric.jpg",
     socials: {
-      facebook: "https://facebook.com",
-      instagram: "https://instagram.com",
-      linkedin: "https://linkedin.com",
+      linkedin: "https://www.linkedin.com/in/ericbossou/",
     },
   },
   {
     id: "2",
-    name: "Anne DOE",
-    role: "Directrice Générale",
+    name: "Gildas GNIDEHOU",
+    role: "Vice-Président/Amérique du Nord",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis at consequat sapien. Lorem ipsum dolor sit amet.",
-    avatar:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&q=80",
+    avatar: "https://placehold.co/600@3x.png",
     socials: {
-      linkedin: "https://linkedin.com",
+      linkedin: "https://www.linkedin.com/in/gildas-gnidehou-b142b836/",
     },
   },
   {

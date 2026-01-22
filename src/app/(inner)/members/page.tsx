@@ -342,18 +342,10 @@ export default function MembresPage() {
 
                           {/* CTA */}
                           <div className="mt-3">
-                            {member.isProspect ? (
-                              <div className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-3 sm:py-2 bg-white/20 text-white text-sm sm:text-xs font-medium rounded-md cursor-default">
-                                <Clock className="w-5 h-5 sm:w-4 sm:h-4" />
-                                Adhésion en cours
-                              </div>
-                            ) : member.type === "Contributeur" ? (
+                            {member.type === "Contributeur" &&
+                            member.linkedin ? (
                               <a
-                                href={
-                                  member.linkedin
-                                    ? `https://linkedin.com/in/${member.linkedin}`
-                                    : "#"
-                                }
+                                href={`https://linkedin.com/in/${member.linkedin}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-3 sm:py-2 bg-white text-[#0077B5] text-sm sm:text-xs font-medium rounded-md hover:bg-white/90 transition-colors"
@@ -361,9 +353,9 @@ export default function MembresPage() {
                                 <Linkedin className="w-5 h-5 sm:w-4 sm:h-4" />
                                 Voir le profil
                               </a>
-                            ) : (
+                            ) : member.website && member.website !== "#" ? (
                               <a
-                                href={member.website || "#"}
+                                href={member.website}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-3 sm:py-2 bg-white text-neutral-800 text-sm sm:text-xs font-medium rounded-md hover:bg-white/90 transition-colors"
@@ -371,6 +363,16 @@ export default function MembresPage() {
                                 <Globe className="w-5 h-5 sm:w-4 sm:h-4" />
                                 Visiter le site
                               </a>
+                            ) : member.isProspect ? (
+                              <div className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-3 sm:py-2 bg-white/20 text-white text-sm sm:text-xs font-medium rounded-md cursor-default">
+                                <Clock className="w-5 h-5 sm:w-4 sm:h-4" />
+                                Adhésion en cours
+                              </div>
+                            ) : (
+                              <div className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-3 sm:py-2 bg-white/20 text-white text-sm sm:text-xs font-medium rounded-md cursor-default">
+                                <Globe className="w-5 h-5 sm:w-4 sm:h-4" />
+                                Site non disponible
+                              </div>
                             )}
                           </div>
                         </div>
