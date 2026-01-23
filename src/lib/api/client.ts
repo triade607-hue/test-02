@@ -1,5 +1,6 @@
 // ============================================================
 // CLIENT HTTP - imo2tun
+// Version corrigée - Sauvegarde URL avant redirection login
 // ============================================================
 
 import { API_BASE_URL, AUTH_ENDPOINTS } from "./endpoints";
@@ -42,12 +43,33 @@ export function setTokens(accessToken: string, refreshToken: string): void {
 
 /**
  * Supprime les tokens du localStorage
+ * Émet un événement pour notifier le contexte Auth
  */
 export function clearTokens(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
   localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
   localStorage.removeItem(STORAGE_KEYS.USER);
+
+  // Émettre un événement custom pour notifier le contexte Auth
+  window.dispatchEvent(new CustomEvent("auth:tokens-cleared"));
+}
+
+/**
+ * Émet un événement de session expirée
+ * Le contexte Auth écoutera et gérera la redirection
+ */
+export function emitSessionExpired(): void {
+  if (typeof window === "undefined") return;
+
+  // Sauvegarder l'URL actuelle avant la redirection
+  const currentUrl = window.location.pathname + window.location.search;
+  if (!currentUrl.startsWith("/login") && !currentUrl.startsWith("/register")) {
+    sessionStorage.setItem("redirectAfterLogin", currentUrl);
+  }
+
+  // Émettre l'événement - le contexte Auth gérera la redirection
+  window.dispatchEvent(new CustomEvent("auth:session-expired"));
 }
 
 // ==================== ERROR HANDLING ====================
@@ -70,6 +92,27 @@ async function parseApiError(response: Response): Promise<ApiError> {
       status: response.status,
     };
   }
+}
+
+// ==================== REDIRECT HELPER ====================
+
+/**
+ * Sauvegarde l'URL actuelle et redirige vers login
+ * Utilisé quand la session expire
+ */
+function redirectToLogin(): void {
+  if (typeof window === "undefined") return;
+
+  // Sauvegarder l'URL actuelle (path + query string)
+  const currentUrl = window.location.pathname + window.location.search;
+
+  // Ne pas sauvegarder les pages d'auth comme URL de retour
+  if (!currentUrl.startsWith("/login") && !currentUrl.startsWith("/register")) {
+    sessionStorage.setItem("redirectAfterLogin", currentUrl);
+  }
+
+  // Émettre l'événement de session expirée (le contexte Auth gérera la redirection)
+  emitSessionExpired();
 }
 
 // ==================== REFRESH TOKEN LOGIC ====================
@@ -144,7 +187,7 @@ interface RequestOptions {
  */
 export async function apiClient<T>(
   endpoint: string,
-  options: RequestOptions = {}
+  options: RequestOptions = {},
 ): Promise<T> {
   const {
     method = "GET",
@@ -181,7 +224,7 @@ export async function apiClient<T>(
       Object.entries(body as Record<string, unknown>).forEach(
         ([key, value]) => {
           formData.append(key, String(value));
-        }
+        },
       );
       requestBody = formData;
     } else {
@@ -209,11 +252,9 @@ export async function apiClient<T>(
         body: requestBody,
       });
     } catch {
+      // Le refresh a échoué - sauvegarder l'URL et rediriger
       clearTokens();
-      // Rediriger vers la page de login
-      if (typeof window !== "undefined") {
-        window.location.href = "/login?expired=true";
-      }
+      redirectToLogin();
       throw new Error("Session expirée");
     }
   }
@@ -244,7 +285,7 @@ export function get<T>(endpoint: string, auth = false): Promise<T> {
 export function post<T>(
   endpoint: string,
   body?: unknown,
-  options: Omit<RequestOptions, "method" | "body"> = {}
+  options: Omit<RequestOptions, "method" | "body"> = {},
 ): Promise<T> {
   return apiClient<T>(endpoint, { ...options, method: "POST", body });
 }
@@ -255,7 +296,7 @@ export function post<T>(
 export function put<T>(
   endpoint: string,
   body?: unknown,
-  auth = true
+  auth = true,
 ): Promise<T> {
   return apiClient<T>(endpoint, { method: "PUT", body, auth });
 }
@@ -266,7 +307,7 @@ export function put<T>(
 export function patch<T>(
   endpoint: string,
   body?: unknown,
-  auth = true
+  auth = true,
 ): Promise<T> {
   return apiClient<T>(endpoint, { method: "PATCH", body, auth });
 }

@@ -61,7 +61,7 @@ export const EVENTS_ENDPOINTS = {
   LIST: "/api/public/events",
   DETAIL: (slug: string) => `/api/public/events/${slug}`,
   CATEGORIES: "/api/public/events/categories",
-  REGISTER: (eventId: string) => `/api/public/events/${eventId}/register`,
+  REGISTER: (eventId: string) => `/api/user/events/${eventId}/register`,
 };
 
 /**
