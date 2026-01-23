@@ -1,15 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, Clock, MapPin, ArrowRight, Sparkles } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils/format-validation";
 import { Event } from "@/types/event.types";
-import { useAuth } from "@/hooks/use-auth";
-import { eventsService } from "@/lib/services/events.service";
 import { getFileUrl } from "@/lib/utils/image-url";
 
 interface EventCardProps {
@@ -19,9 +16,6 @@ interface EventCardProps {
 
 export function EventCard({ event, index = 0 }: EventCardProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const [isRegistering, setIsRegistering] = useState(false);
-  const router = useRouter();
-  const { isAuthenticated } = useAuth();
 
   // Format date
   const formatDate = (dateString: string) => {
@@ -40,34 +34,6 @@ export function EventCard({ event, index = 0 }: EventCardProps) {
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
-
-  // Handle inscription click
-  const handleInscriptionClick = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    // Si non connecté → sauvegarder l'intention et rediriger vers login
-    if (!isAuthenticated) {
-      localStorage.setItem("pendingEventRegistration", event.id);
-      router.push(`/login?redirect=/events/${event.slug}&action=register`);
-      return;
-    }
-
-    // Si connecté → appeler l'API d'inscription
-    try {
-      setIsRegistering(true);
-      const response = await eventsService.registerToEvent(event.id);
-
-      // Rediriger vers la page de paiement
-      if (response.paymentRedirectUrl) {
-        window.location.href = response.paymentRedirectUrl;
-      }
-    } catch (error) {
-      console.error("Erreur lors de l'inscription:", error);
-    } finally {
-      setIsRegistering(false);
-    }
   };
 
   // Image avec base URL
@@ -269,34 +235,19 @@ export function EventCard({ event, index = 0 }: EventCardProps) {
               {event.excerpt}
             </motion.p>
 
-            {/* Boutons avec animation */}
+            {/* Bouton unique - Voir plus */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
-              className="flex gap-3"
             >
-              {event.upcoming && (
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleInscriptionClick}
-                  disabled={isRegistering}
-                  className="flex-1 bg-white text-[#007DC5] font-bold py-3 px-4 rounded-md text-sm hover:bg-white/90 transition-colors shadow-lg shadow-black/10 disabled:opacity-50"
-                >
-                  {isRegistering ? "Inscription..." : "S'inscrire"}
-                </motion.button>
-              )}
-              <Link
-                href={`/events/${event.slug}`}
-                className={event.upcoming ? "flex-1" : "w-full"}
-              >
+              <Link href={`/events/${event.slug}`} className="block">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="w-full border-2 border-white text-white font-bold py-3 px-4 rounded-md text-sm hover:bg-white hover:text-[#007DC5] transition-all flex items-center justify-center gap-2 group/btn"
                 >
-                  Voir plus
+                  Voir les détails
                   <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                 </motion.button>
               </Link>

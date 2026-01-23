@@ -9,7 +9,7 @@ import { ChevronRight } from "lucide-react";
 import { HeroSecondary } from "@/components/shared/hero-secondary";
 import { SectionTitle } from "@/components/shared/section-title";
 import { ValueCard } from "@/components/shared/value-card";
-import { TeamSlider } from "@/components/shared/team-slider";
+// import { TeamSlider } from "@/components/shared/team-slider";
 import { PartnersSlider } from "@/components/shared/partners-slider";
 import { Button } from "@/components/ui";
 
@@ -127,7 +127,7 @@ export default function AboutPage() {
       </section>
 
       {/* Notre Équipe */}
-      <TeamSlider />
+      {/* <TeamSlider /> */}
 
       {/* Nos Partenaires */}
       <section className="py-16 lg:py-24 bg-white">
