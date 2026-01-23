@@ -85,10 +85,11 @@ export const MEMBERS_ENDPOINTS = {
  * Endpoints adhésion / candidature
  */
 export const MEMBERSHIP_ENDPOINTS = {
-  TIERS: "/api/membership/tiers",
-  CANDIDATURE: "/api/membership/candidature",
-  MY_MEMBERSHIP: "/api/user/membership",
-} as const;
+  MEMBER_TYPES: "/api/public/references/member-types",
+  TIERS_BY_TYPE: (memberTypeId: string) =>
+    `/api/public/tiers/by-type-id/${memberTypeId}`,
+  APPLY: "/api/public/membership/apply",
+};
 
 /**
  * Endpoints contact / newsletter (MIS À JOUR)

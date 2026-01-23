@@ -1,7 +1,9 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronRight,
@@ -16,31 +18,110 @@ import {
   Plus,
   Minus,
   Mail,
+  Loader2,
 } from "lucide-react";
 
 // Components
 import { HeroSecondary } from "@/components/shared/hero-secondary";
 import { Button } from "@/components/ui";
 
-// Data
+// Data (mocks pour features et fallback)
 import {
-  memberTypes,
+  memberTypes as mockMemberTypes,
   membershipTiers,
   membershipBenefits,
   adhesionProcess,
   membershipFAQ,
+  type MemberTypeId,
 } from "@/lib/data/membership";
 
-// Types
-type MemberTypeId = "offreur" | "utilisateur" | "contributeur" | "partenaire";
+// Hook API
+import { useMembership } from "@/hooks/use-membership";
+// Hook Auth (supposé existant dans le projet)
+import { useAuth } from "@/hooks/use-auth";
 
 export default function MembershipPage() {
+  const router = useRouter();
   const [selectedType, setSelectedType] = useState<MemberTypeId>("offreur");
   const [openFaqId, setOpenFaqId] = useState<string | null>("1");
 
-  const currentType = memberTypes.find((t) => t.id === selectedType);
+  // Hook Auth pour vérifier si l'utilisateur est connecté
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+
+  // Hook pour charger les données API
+  const {
+    memberTypes: apiMemberTypes,
+    tiers: apiTiers,
+    isLoadingMemberTypes,
+    isLoadingTiers,
+    fetchMemberTypes,
+    fetchTiersByMemberType,
+    getMemberTypeBySlug,
+  } = useMembership();
+
+  // Charger les types de membres au montage
+  useEffect(() => {
+    fetchMemberTypes();
+  }, []);
+
+  // Charger les tiers quand le type change
+  useEffect(() => {
+    const memberType = getMemberTypeBySlug(selectedType);
+    if (memberType && !apiTiers[memberType.id]) {
+      fetchTiersByMemberType(memberType.id);
+    }
+  }, [selectedType, apiMemberTypes]);
+
+  // Utiliser les données API si disponibles, sinon fallback sur les mocks
+  const memberTypesToDisplay =
+    apiMemberTypes.length > 0
+      ? apiMemberTypes.map((mt) => ({
+          id: mt.slug,
+          label: mt.label,
+          description: mt.description,
+        }))
+      : mockMemberTypes;
+
+  const currentType = memberTypesToDisplay.find((t) => t.id === selectedType);
+
+  // Récupérer les tiers actuels (API + features mockées)
+  const apiMemberType = getMemberTypeBySlug(selectedType);
+  const apiCurrentTiers = apiMemberType ? apiTiers[apiMemberType.id] || [] : [];
+  const mockCurrentTiers = membershipTiers[selectedType] || [];
+
+  // Combiner les prix API avec les features mockées
   const currentTiers =
-    membershipTiers[selectedType as keyof typeof membershipTiers];
+    apiCurrentTiers.length > 0
+      ? apiCurrentTiers.map((apiTier) => {
+          const mockTier = mockCurrentTiers.find((m) => m.id === apiTier.slug);
+          return {
+            id: apiTier.slug,
+            name: apiTier.name,
+            price: apiTier.priceFormatted,
+            currency: apiTier.currency,
+            featured: apiTier.featured,
+            features: mockTier?.features || [],
+          };
+        })
+      : mockCurrentTiers;
+
+  // Gérer le clic sur "Choisir" - Rediriger vers login si non connecté
+  const handleChooseTier = (tierId: string) => {
+    const targetUrl = `/membership/candidature?type=${selectedType}&tier=${tierId}`;
+
+    if (isAuthLoading) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      // Rediriger vers login avec returnUrl
+      const returnUrl = encodeURIComponent(targetUrl);
+      router.push(`/login?returnUrl=${returnUrl}`);
+    } else {
+      // Utilisateur connecté, aller directement au formulaire
+      router.push(targetUrl);
+    }
+  };
 
   // Get icon for benefits
   const getBenefitIcon = (iconName: string) => {
@@ -125,19 +206,26 @@ export default function MembershipPage() {
 
           {/* Type Tabs */}
           <div className="flex flex-wrap justify-center gap-2 mb-8">
-            {memberTypes.map((type) => (
-              <button
-                key={type.id}
-                onClick={() => setSelectedType(type.id as MemberTypeId)}
-                className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
-                  selectedType === type.id
-                    ? "bg-[#F9A825] text-white shadow-md"
-                    : "bg-white text-neutral-600 hover:bg-neutral-100 border border-neutral-200"
-                }`}
-              >
-                {type.label}
-              </button>
-            ))}
+            {isLoadingMemberTypes ? (
+              <div className="flex items-center gap-2 text-neutral-500">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Chargement...</span>
+              </div>
+            ) : (
+              memberTypesToDisplay.map((type) => (
+                <button
+                  key={type.id}
+                  onClick={() => setSelectedType(type.id as MemberTypeId)}
+                  className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
+                    selectedType === type.id
+                      ? "bg-[#F9A825] text-white shadow-md"
+                      : "bg-white text-neutral-600 hover:bg-neutral-100 border border-neutral-200"
+                  }`}
+                >
+                  {type.label}
+                </button>
+              ))
+            )}
           </div>
 
           {/* Type Description */}
@@ -156,73 +244,83 @@ export default function MembershipPage() {
           </AnimatePresence>
 
           {/* Pricing Cards */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            {currentTiers.map((tier, index) => (
-              <motion.div
-                key={tier.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className={`relative rounded-md overflow-hidden ${
-                  tier.featured
-                    ? "bg-white shadow-xl ring-2 ring-[#F9A825] scale-105 z-10"
-                    : "bg-white shadow-lg"
-                }`}
-              >
-                {/* Header */}
-                <div
-                  className={`p-6 text-center ${
+          {isLoadingTiers ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-8 h-8 animate-spin text-[#0077B6]" />
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+              {currentTiers.map((tier, index) => (
+                <motion.div
+                  key={tier.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className={`relative rounded-md overflow-hidden ${
                     tier.featured
-                      ? "bg-[#F9A825] text-white"
-                      : "bg-[#0077B6] text-white"
+                      ? "bg-white shadow-xl ring-2 ring-[#F9A825] scale-105 z-10"
+                      : "bg-white shadow-lg"
                   }`}
                 >
-                  <span
-                    className={`inline-block px-3 py-1 rounded-full text-xs font-semibold mb-3 ${
+                  {/* Header */}
+                  <div
+                    className={`p-6 text-center ${
                       tier.featured
-                        ? "bg-white/20 text-white"
-                        : "bg-white/20 text-white"
+                        ? "bg-[#F9A825] text-white"
+                        : "bg-[#0077B6] text-white"
                     }`}
                   >
-                    {tier.name}
-                  </span>
-                  <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-2xl md:text-3xl font-bold">
-                      {tier.price}
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-xs font-semibold mb-3 ${
+                        tier.featured
+                          ? "bg-white/20 text-white"
+                          : "bg-white/20 text-white"
+                      }`}
+                    >
+                      {tier.name}
                     </span>
-                    <span className="text-sm opacity-80">{tier.currency}</span>
+                    <div className="flex items-baseline justify-center gap-1">
+                      <span className="text-2xl md:text-3xl font-bold">
+                        {tier.price}
+                      </span>
+                      <span className="text-sm opacity-80">
+                        {tier.currency}
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                {/* Features */}
-                <div className="p-6">
-                  <ul className="space-y-3">
-                    {tier.features.map((feature, i) => (
-                      <li key={i} className="flex items-start gap-3 text-sm">
-                        <Check className="w-4 h-4 text-[#26A69A] flex-shrink-0 mt-0.5" />
-                        <span className="text-neutral-600">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                  {/* Features */}
+                  <div className="p-6">
+                    <ul className="space-y-3">
+                      {tier.features.map((feature, i) => (
+                        <li key={i} className="flex items-start gap-3 text-sm">
+                          <Check className="w-4 h-4 text-[#26A69A] flex-shrink-0 mt-0.5" />
+                          <span className="text-neutral-600">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
 
-                {/* CTA */}
-                <div className="px-6 pb-6">
-                  <Link
-                    href={`/membership/candidature?type=${selectedType}&tier=${tier.id}`}
-                  >
+                  {/* CTA */}
+                  <div className="px-6 pb-6">
                     <Button
                       variant={tier.featured ? "primary" : "outline"}
                       className="w-full"
+                      onClick={() => handleChooseTier(tier.id)}
+                      disabled={isAuthLoading}
                     >
-                      Choisir
+                      {isAuthLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "Choisir"
+                      )}
                     </Button>
-                  </Link>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -263,15 +361,14 @@ export default function MembershipPage() {
 
           {/* CTA */}
           <div className="text-center mt-12">
-            <Link href={`/membership/candidature?type=${selectedType}`}>
-              <Button
-                variant="primary"
-                size="lg"
-                rightIcon={<ChevronRight className="w-5 h-5" />}
-              >
-                Commencer ma candidature
-              </Button>
-            </Link>
+            <Button
+              variant="primary"
+              size="lg"
+              rightIcon={<ChevronRight className="w-5 h-5" />}
+              onClick={() => handleChooseTier("sunun")}
+            >
+              Commencer ma candidature
+            </Button>
           </div>
         </div>
       </section>
@@ -386,9 +483,8 @@ export default function MembershipPage() {
                 Avez-vous d&apos;autres questions ?
               </h3>
               <p className="text-sm text-neutral-600 text-center mb-6 leading-relaxed">
-                Combien Forum observé de la disponibilité de compétences
-                opérationnelles chez les jeunes dès leur premier jour
-                d&apos;embauche.
+                Notre équipe est disponible pour répondre à toutes vos questions
+                concernant l&apos;adhésion à imo2tun.
               </p>
               <div className="text-center">
                 <Link href="/contact">
@@ -400,15 +496,14 @@ export default function MembershipPage() {
 
           {/* Final CTA */}
           <div className="text-center mt-16">
-            <Link href={`/membership/candidature?type=${selectedType}`}>
-              <Button
-                variant="primary"
-                size="lg"
-                rightIcon={<ChevronRight className="w-5 h-5" />}
-              >
-                Commencer ma candidature
-              </Button>
-            </Link>
+            <Button
+              variant="primary"
+              size="lg"
+              rightIcon={<ChevronRight className="w-5 h-5" />}
+              onClick={() => handleChooseTier("sunun")}
+            >
+              Commencer ma candidature
+            </Button>
           </div>
         </div>
       </section>
