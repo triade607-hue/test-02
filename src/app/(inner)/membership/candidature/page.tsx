@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronRight,
@@ -12,6 +12,10 @@ import {
   User,
   CreditCard,
   MessageSquare,
+  Loader2,
+  Upload,
+  X,
+  ChevronDown,
 } from "lucide-react";
 
 // Components
@@ -19,17 +23,31 @@ import { HeroSecondary } from "@/components/shared/hero-secondary";
 import { NewsletterBanner } from "@/components/layout/newsletter-banner";
 import { Button } from "@/components/ui";
 
-// Data
-import { memberTypes, membershipTiers } from "@/lib/data/membership";
+// Data (mocks et données statiques)
+import {
+  memberTypes as mockMemberTypes,
+  membershipTiers,
+  type MemberTypeId,
+  type TierId,
+} from "@/lib/data/membership";
 import { COUNTRIES, PROFESSIONS } from "@/lib/data";
+import {
+  CIVILITIES,
+  WORKFORCE_SIZES,
+  ACTIVITY_SECTORS,
+  EXPERTISE_DOMAINS,
+} from "@/lib/data/form-options";
+
+// Hook API
+import { useMembership } from "@/hooks/use-membership";
+// Hook Auth (supposé existant dans le projet)
+import { useAuth } from "@/hooks/use-auth";
 
 // Types
-type MemberTypeId = "offreur" | "utilisateur" | "contributeur" | "partenaire";
-type TierId = "asuka" | "sunun" | "mindaho" | "dah";
 type Duration = 1 | 2 | 5;
 
 interface FormData {
-  // Adhésion (en premier)
+  // Adhésion (uniquement tier et durée)
   adhesion: {
     type: MemberTypeId;
     tier: TierId;
@@ -40,11 +58,13 @@ interface FormData {
     nom: string;
     secteur: string;
     email: string;
+    countryCode: string;
     telephone: string;
     effectif: string;
     adresse: string;
     ville: string;
     pays: string;
+    website: string;
     logo: File | null;
   };
   // Référent / Contributeur info
@@ -54,13 +74,16 @@ interface FormData {
     prenom: string;
     fonction: string;
     email: string;
+    countryCode: string;
     telephone: string;
     adresse: string;
     ville: string;
     pays: string;
     // Champs spécifiques contributeur
-    expertise: string;
+    profession: string;
+    expertises: string[];
     linkedin: string;
+    cv: File | null;
   };
   // Facturation
   facturation: {
@@ -68,8 +91,8 @@ interface FormData {
     emailDevis: string;
     adresse: string;
     email: string;
+    countryCode: string;
     telephone: string;
-    adresseComplete: string;
     ville: string;
     pays: string;
   };
@@ -82,9 +105,29 @@ interface FormData {
 
 function CandidaturePageContent() {
   const searchParams = useSearchParams();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const router = useRouter();
   const [logoFileName, setLogoFileName] = useState<string>("");
+  const [cvFileName, setCvFileName] = useState<string>("");
+  const [isExpertiseDropdownOpen, setIsExpertiseDropdownOpen] = useState(false);
+
+  // Hook Auth pour récupérer les infos de l'utilisateur connecté
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+
+  // Hook API pour membership
+  const {
+    memberTypes: apiMemberTypes,
+    tiers: apiTiers,
+    isLoadingMemberTypes,
+    isSubmitting,
+    isSuccess,
+    error,
+    fetchMemberTypes,
+    fetchTiersByMemberType,
+    getMemberTypeBySlug,
+    getTierId,
+    submitOrganizationApplication,
+    submitContributorApplication,
+  } = useMembership();
 
   const [formData, setFormData] = useState<FormData>({
     adhesion: {
@@ -96,11 +139,13 @@ function CandidaturePageContent() {
       nom: "",
       secteur: "",
       email: "",
+      countryCode: "+229",
       telephone: "",
       effectif: "",
       adresse: "",
       ville: "",
       pays: "",
+      website: "",
       logo: null,
     },
     referent: {
@@ -109,20 +154,23 @@ function CandidaturePageContent() {
       prenom: "",
       fonction: "",
       email: "",
+      countryCode: "+229",
       telephone: "",
       adresse: "",
       ville: "",
       pays: "",
-      expertise: "",
+      profession: "",
+      expertises: [],
       linkedin: "",
+      cv: null,
     },
     facturation: {
       demanderDevis: false,
       emailDevis: "",
       adresse: "",
       email: "",
+      countryCode: "+229",
       telephone: "",
-      adresseComplete: "",
       ville: "",
       pays: "",
     },
@@ -131,7 +179,21 @@ function CandidaturePageContent() {
     accepteNewsletter: false,
   });
 
-  // Pré-remplir le formulaire avec les query params
+  // Rediriger vers login si non connecté
+  useEffect(() => {
+    if (!isAuthLoading && !isAuthenticated) {
+      const currentUrl = window.location.pathname + window.location.search;
+      const returnUrl = encodeURIComponent(currentUrl);
+      router.push(`/login?returnUrl=${returnUrl}`);
+    }
+  }, [isAuthLoading, isAuthenticated, router]);
+
+  // Charger les types de membres au montage
+  useEffect(() => {
+    fetchMemberTypes();
+  }, []);
+
+  // Pré-remplir avec les query params
   useEffect(() => {
     const typeParam = searchParams.get("type");
     const tierParam = searchParams.get("tier");
@@ -148,31 +210,80 @@ function CandidaturePageContent() {
     }
   }, [searchParams]);
 
+  // Pré-remplir les champs référent/contributeur avec les infos du user connecté
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        referent: {
+          ...prev.referent,
+          nom: user.lastName || prev.referent.nom,
+          prenom: user.firstName || prev.referent.prenom,
+          email: user.email || prev.referent.email,
+          telephone: user.phone || prev.referent.telephone,
+          countryCode: user.countryCode || prev.referent.countryCode,
+          profession: user.profession || prev.referent.profession,
+        },
+        facturation: {
+          ...prev.facturation,
+          email: user.email || prev.facturation.email,
+        },
+      }));
+    }
+  }, [user]);
+
+  // Charger les tiers quand le type change
+  useEffect(() => {
+    const memberType = getMemberTypeBySlug(formData.adhesion.type);
+    if (memberType && !apiTiers[memberType.id]) {
+      fetchTiersByMemberType(memberType.id);
+    }
+  }, [formData.adhesion.type, apiMemberTypes]);
+
   // Vérifier si c'est un type organisation (pas contributeur)
   const isOrganisation = formData.adhesion.type !== "contributeur";
 
-  // Obtenir les tiers pour le type sélectionné
-  const currentTiers = membershipTiers[formData.adhesion.type] || [];
+  // Utiliser les données API si disponibles, sinon fallback sur les mocks
+  const memberTypesToDisplay =
+    apiMemberTypes.length > 0
+      ? apiMemberTypes.map((mt) => ({
+          id: mt.slug,
+          label: mt.label,
+          description: mt.description,
+        }))
+      : mockMemberTypes;
+
+  // Récupérer les tiers actuels (API + features mockées)
+  const apiMemberType = getMemberTypeBySlug(formData.adhesion.type);
+  const apiCurrentTiers = apiMemberType ? apiTiers[apiMemberType.id] || [] : [];
+  const mockCurrentTiers = membershipTiers[formData.adhesion.type] || [];
+
+  // Combiner les prix API avec les features mockées
+  const currentTiers =
+    apiCurrentTiers.length > 0
+      ? apiCurrentTiers.map((apiTier) => {
+          const mockTier = mockCurrentTiers.find((m) => m.id === apiTier.slug);
+          return {
+            id: apiTier.slug,
+            name: apiTier.name,
+            price: apiTier.priceFormatted,
+            currency: apiTier.currency,
+            featured: apiTier.featured,
+            features: mockTier?.features || [],
+          };
+        })
+      : mockCurrentTiers;
 
   // Calculer le prix total
   const priceCalculation = useMemo(() => {
     const tier = currentTiers.find((t) => t.id === formData.adhesion.tier);
     if (!tier) {
-      return {
-        total: 0,
-        currency: "FCFA",
-      };
+      return { total: 0, currency: "FCFA" };
     }
-
-    // Convertir le prix string en nombre
     const basePrice = parseInt(tier.price.replace(/\./g, ""), 10);
     const duration = formData.adhesion.duration;
     const total = basePrice * duration;
-
-    return {
-      total,
-      currency: tier.currency,
-    };
+    return { total, currency: tier.currency };
   }, [currentTiers, formData.adhesion.tier, formData.adhesion.duration]);
 
   // Formater le prix
@@ -183,7 +294,7 @@ function CandidaturePageContent() {
   // Handlers
   const handleAdhesionChange = (
     field: keyof FormData["adhesion"],
-    value: string | number
+    value: string | number,
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -193,7 +304,7 @@ function CandidaturePageContent() {
 
   const handleOrganisationChange = (
     field: keyof FormData["organisation"],
-    value: string
+    value: string,
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -203,7 +314,7 @@ function CandidaturePageContent() {
 
   const handleReferentChange = (
     field: keyof FormData["referent"],
-    value: string
+    value: string | string[],
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -213,7 +324,7 @@ function CandidaturePageContent() {
 
   const handleFacturationChange = (
     field: keyof FormData["facturation"],
-    value: string | boolean
+    value: string | boolean,
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -232,16 +343,127 @@ function CandidaturePageContent() {
     }
   };
 
+  const handleCvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData((prev) => ({
+        ...prev,
+        referent: { ...prev.referent, cv: file },
+      }));
+      setCvFileName(file.name);
+    }
+  };
+
+  const toggleExpertise = (value: string) => {
+    const current = formData.referent.expertises;
+    const updated = current.includes(value)
+      ? current.filter((v) => v !== value)
+      : [...current, value];
+    handleReferentChange("expertises", updated);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    // Récupérer l'UUID du tier depuis l'API
+    const tierId = getTierId(formData.adhesion.type, formData.adhesion.tier);
 
-    setIsSubmitting(false);
-    setIsSuccess(true);
+    if (!tierId) {
+      console.warn("Tier ID not found, submitting with slug");
+    }
+
+    if (isOrganisation) {
+      // Candidature organisation
+      await submitOrganizationApplication(
+        {
+          requestedTierId: tierId || formData.adhesion.tier,
+          durationYears: formData.adhesion.duration,
+          organizationName: formData.organisation.nom,
+          organizationActivitySector: formData.organisation.secteur,
+          organizationAddress: formData.organisation.adresse,
+          organizationEmail: formData.organisation.email,
+          organizationCountryCode: formData.organisation.countryCode,
+          organizationPhone: formData.organisation.telephone,
+          organizationWorkforceSize: formData.organisation.effectif,
+          organizationCity: formData.organisation.ville,
+          organizationCountry: formData.organisation.pays,
+          organizationWebsite: formData.organisation.website,
+          contactCivility: formData.referent.civilite,
+          contactFirstName: formData.referent.prenom,
+          contactLastName: formData.referent.nom,
+          contactEmail: formData.referent.email,
+          contactCountryCode: formData.referent.countryCode,
+          contactPhone: formData.referent.telephone,
+          contactJobTitle: formData.referent.fonction,
+          contactAddress: formData.referent.adresse,
+          contactCity: formData.referent.ville,
+          contactCountry: formData.referent.pays,
+          quoteRequested: formData.facturation.demanderDevis,
+          quoteEmail: formData.facturation.emailDevis,
+          billingAddress: formData.facturation.adresse,
+          billingCity: formData.facturation.ville,
+          billingCountry: formData.facturation.pays,
+          billingEmail: formData.facturation.email,
+          billingCountryCode: formData.facturation.countryCode,
+          billingPhone: formData.facturation.telephone,
+          rulesAccepted: formData.accepteReglement,
+          newsletterAccepted: formData.accepteNewsletter,
+          comments: formData.commentaires,
+        },
+        formData.organisation.logo,
+      );
+    } else {
+      // Candidature contributeur
+      await submitContributorApplication(
+        {
+          requestedTierId: tierId || formData.adhesion.tier,
+          durationYears: formData.adhesion.duration,
+          contactCivility: formData.referent.civilite,
+          contactFirstName: formData.referent.prenom,
+          contactLastName: formData.referent.nom,
+          contactEmail: formData.referent.email,
+          contactCountryCode: formData.referent.countryCode,
+          contactPhone: formData.referent.telephone,
+          contactProfession: formData.referent.profession,
+          contactAddress: formData.referent.adresse,
+          contactCity: formData.referent.ville,
+          contactCountry: formData.referent.pays,
+          expertiseDomains: formData.referent.expertises,
+          linkedinProfileUrl: formData.referent.linkedin,
+          quoteRequested: formData.facturation.demanderDevis,
+          quoteEmail: formData.facturation.emailDevis,
+          billingAddress: formData.facturation.adresse,
+          billingCity: formData.facturation.ville,
+          billingCountry: formData.facturation.pays,
+          billingEmail: formData.facturation.email,
+          billingCountryCode: formData.facturation.countryCode,
+          billingPhone: formData.facturation.telephone,
+          rulesAccepted: formData.accepteReglement,
+          newsletterAccepted: formData.accepteNewsletter,
+          comments: formData.commentaires,
+        },
+        formData.referent.cv,
+      );
+    }
   };
+
+  // Loading state pendant vérification auth
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#0077B6]" />
+      </div>
+    );
+  }
+
+  // Redirection si non connecté (le useEffect gère la redirection)
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#0077B6]" />
+      </div>
+    );
+  }
 
   if (isSuccess) {
     return (
@@ -299,27 +521,25 @@ function CandidaturePageContent() {
       {/* Breadcrumb */}
       <div className="bg-neutral-50">
         <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <nav className="flex items-center gap-2 text-sm">
-              <Link
-                href="/"
-                className="text-neutral-600 hover:text-primary-600 transition-colors"
-              >
-                Accueil
-              </Link>
-              <ChevronRight className="w-4 h-4 text-neutral-400" />
-              <Link
-                href="/membership"
-                className="text-neutral-600 hover:text-primary-600 transition-colors"
-              >
-                Adhérer
-              </Link>
-              <ChevronRight className="w-4 h-4 text-neutral-400" />
-              <span className="text-secondary-500 font-medium">
-                Formulaire d&apos;adhésion
-              </span>
-            </nav>
-          </div>
+          <nav className="flex items-center gap-2 text-sm">
+            <Link
+              href="/"
+              className="text-neutral-600 hover:text-primary-600 transition-colors"
+            >
+              Accueil
+            </Link>
+            <ChevronRight className="w-4 h-4 text-neutral-400" />
+            <Link
+              href="/membership"
+              className="text-neutral-600 hover:text-primary-600 transition-colors"
+            >
+              Adhérer
+            </Link>
+            <ChevronRight className="w-4 h-4 text-neutral-400" />
+            <span className="text-secondary-500 font-medium">
+              Formulaire d&apos;adhésion
+            </span>
+          </nav>
         </div>
       </div>
 
@@ -334,6 +554,17 @@ function CandidaturePageContent() {
           >
             Formulaire d&apos;adhésion
           </motion.h2>
+
+          {/* Error message */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm"
+            >
+              {error}
+            </motion.div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* ========== SECTION 1: Type d'adhésion et cotisation ========== */}
@@ -363,23 +594,32 @@ function CandidaturePageContent() {
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Type de membre<span className="text-red-500">*</span>
                   </label>
-                  <select
-                    required
-                    value={formData.adhesion.type}
-                    onChange={(e) =>
-                      handleAdhesionChange(
-                        "type",
-                        e.target.value as MemberTypeId
-                      )
-                    }
-                    className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
-                  >
-                    {memberTypes.map((type) => (
-                      <option key={type.id} value={type.id}>
-                        {type.label}
-                      </option>
-                    ))}
-                  </select>
+                  {isLoadingMemberTypes ? (
+                    <div className="flex items-center gap-2 px-4 py-2.5 border border-neutral-200 rounded-md">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="text-sm text-neutral-500">
+                        Chargement...
+                      </span>
+                    </div>
+                  ) : (
+                    <select
+                      required
+                      value={formData.adhesion.type}
+                      onChange={(e) =>
+                        handleAdhesionChange(
+                          "type",
+                          e.target.value as MemberTypeId,
+                        )
+                      }
+                      className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                    >
+                      {memberTypesToDisplay.map((type) => (
+                        <option key={type.id} value={type.id}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 {/* Tier */}
@@ -416,7 +656,7 @@ function CandidaturePageContent() {
                     onChange={(e) =>
                       handleAdhesionChange(
                         "duration",
-                        parseInt(e.target.value) as Duration
+                        parseInt(e.target.value) as Duration,
                       )
                     }
                     className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
@@ -433,7 +673,7 @@ function CandidaturePageContent() {
                     Total à payer
                   </label>
                   <div className="px-4 py-1.5 bg-gradient-to-r from-[#0077B6]/10 to-[#26A69A]/10 rounded-md border border-[#0077B6]/20">
-                    <p className="text-md  text-[#000000]">
+                    <p className="text-md text-[#000000]">
                       {formatPrice(priceCalculation.total)}{" "}
                       <span className="text-sm font-normal">
                         {priceCalculation.currency}
@@ -447,8 +687,9 @@ function CandidaturePageContent() {
               <div className="mt-6 p-4 bg-[#FFF8E1] rounded-md">
                 <p className="text-sm text-neutral-700">
                   {
-                    memberTypes.find((t) => t.id === formData.adhesion.type)
-                      ?.description
+                    memberTypesToDisplay.find(
+                      (t) => t.id === formData.adhesion.type,
+                    )?.description
                   }
                 </p>
               </div>
@@ -500,15 +741,21 @@ function CandidaturePageContent() {
                         Secteur d&apos;activité
                         <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="text"
+                      <select
                         required={isOrganisation}
                         value={formData.organisation.secteur}
                         onChange={(e) =>
                           handleOrganisationChange("secteur", e.target.value)
                         }
                         className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
-                      />
+                      >
+                        <option value="">Sélectionner un secteur</option>
+                        {ACTIVITY_SECTORS.map((sector) => (
+                          <option key={sector.value} value={sector.value}>
+                            {sector.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-neutral-700 mb-1.5">
@@ -529,15 +776,37 @@ function CandidaturePageContent() {
                       <label className="block text-sm font-medium text-neutral-700 mb-1.5">
                         Téléphone<span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="tel"
-                        required={isOrganisation}
-                        value={formData.organisation.telephone}
-                        onChange={(e) =>
-                          handleOrganisationChange("telephone", e.target.value)
-                        }
-                        className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
-                      />
+                      <div className="flex gap-2">
+                        <select
+                          value={formData.organisation.countryCode}
+                          onChange={(e) =>
+                            handleOrganisationChange(
+                              "countryCode",
+                              e.target.value,
+                            )
+                          }
+                          className="w-28 px-2 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                        >
+                          {COUNTRIES.map((country) => (
+                            <option key={country.code} value={country.dialCode}>
+                              {country.flag} {country.dialCode}
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          type="tel"
+                          required={isOrganisation}
+                          value={formData.organisation.telephone}
+                          onChange={(e) =>
+                            handleOrganisationChange(
+                              "telephone",
+                              e.target.value,
+                            )
+                          }
+                          placeholder="00 00 00 00"
+                          className="flex-1 px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                        />
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-neutral-700 mb-1.5">
@@ -553,12 +822,26 @@ function CandidaturePageContent() {
                         className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
                       >
                         <option value="">Sélectionner</option>
-                        <option value="1-10">1 - 10 employés</option>
-                        <option value="11-50">11 - 50 employés</option>
-                        <option value="51-200">51 - 200 employés</option>
-                        <option value="201-500">201 - 500 employés</option>
-                        <option value="500+">Plus de 500 employés</option>
+                        {WORKFORCE_SIZES.map((size) => (
+                          <option key={size.value} value={size.value}>
+                            {size.label}
+                          </option>
+                        ))}
                       </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                        Site web
+                      </label>
+                      <input
+                        type="url"
+                        placeholder="https://www.exemple.com"
+                        value={formData.organisation.website}
+                        onChange={(e) =>
+                          handleOrganisationChange("website", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-neutral-700 mb-1.5">
@@ -606,12 +889,13 @@ function CandidaturePageContent() {
                         ))}
                       </select>
                     </div>
-                    <div className="md:col-span-2">
+                    <div>
                       <label className="block text-sm font-medium text-neutral-700 mb-1.5">
                         Logo
                       </label>
                       <div className="flex items-center gap-3">
-                        <label className="px-4 py-2 bg-neutral-100 text-neutral-700 rounded-md text-sm font-medium cursor-pointer hover:bg-neutral-200 transition-colors">
+                        <label className="px-4 py-2 bg-neutral-100 text-neutral-700 rounded-md text-sm font-medium cursor-pointer hover:bg-neutral-200 transition-colors flex items-center gap-2">
+                          <Upload className="w-4 h-4" />
                           Choisir un fichier
                           <input
                             type="file"
@@ -620,7 +904,7 @@ function CandidaturePageContent() {
                             className="hidden"
                           />
                         </label>
-                        <span className="text-sm text-neutral-500">
+                        <span className="text-sm text-neutral-500 truncate max-w-[150px]">
                           {logoFileName || "Aucun fichier choisi"}
                         </span>
                       </div>
@@ -655,188 +939,477 @@ function CandidaturePageContent() {
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">
-                    Civilité<span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    required
-                    value={formData.referent.civilite}
-                    onChange={(e) =>
-                      handleReferentChange("civilite", e.target.value)
-                    }
-                    className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
-                  >
-                    <option value="">Sélectionner</option>
-                    <option value="M.">M.</option>
-                    <option value="Mme">Mme</option>
-                    <option value="Dr">Dr</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">
-                    NOM<span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.referent.nom}
-                    onChange={(e) =>
-                      handleReferentChange("nom", e.target.value)
-                    }
-                    className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">
-                    Prénom<span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.referent.prenom}
-                    onChange={(e) =>
-                      handleReferentChange("prenom", e.target.value)
-                    }
-                    className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
-                  />
-                </div>
-
-                {/* Champs spécifiques selon le type */}
-                {isOrganisation ? (
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1.5">
-                      Fonction<span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      required
-                      value={formData.referent.fonction}
-                      onChange={(e) =>
-                        handleReferentChange("fonction", e.target.value)
-                      }
-                      className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
-                    >
-                      <option value="">Sélectionner une fonction</option>
-                      {PROFESSIONS.map((profession) => (
-                        <option key={profession} value={profession}>
-                          {profession}
-                        </option>
-                      ))}
-                    </select>
+              {/* ===== FORMULAIRE ORGANISATION (Référent) ===== */}
+              {isOrganisation ? (
+                <div className="space-y-4">
+                  {/* Ligne 1: Civilité, Nom, Prénom */}
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                        Civilité<span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        required
+                        value={formData.referent.civilite}
+                        onChange={(e) =>
+                          handleReferentChange("civilite", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                      >
+                        <option value="">Sélectionner</option>
+                        {CIVILITIES.map((civility) => (
+                          <option key={civility.value} value={civility.value}>
+                            {civility.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                        NOM<span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.referent.nom}
+                        onChange={(e) =>
+                          handleReferentChange("nom", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                        Prénom<span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.referent.prenom}
+                        onChange={(e) =>
+                          handleReferentChange("prenom", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                      />
+                    </div>
                   </div>
-                ) : (
-                  <div className="md:col-span-3">
+
+                  {/* Ligne 2: Fonction, Email */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                        Fonction<span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        required
+                        value={formData.referent.fonction}
+                        onChange={(e) =>
+                          handleReferentChange("fonction", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                      >
+                        <option value="">Sélectionner une fonction</option>
+                        {PROFESSIONS.map((profession) => (
+                          <option key={profession} value={profession}>
+                            {profession}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                        E-mail<span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={formData.referent.email}
+                        onChange={(e) =>
+                          handleReferentChange("email", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Ligne 3: Téléphone, Adresse */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                        Téléphone<span className="text-red-500">*</span>
+                      </label>
+                      <div className="flex gap-2">
+                        <select
+                          value={formData.referent.countryCode}
+                          onChange={(e) =>
+                            handleReferentChange("countryCode", e.target.value)
+                          }
+                          className="w-28 px-2 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                        >
+                          {COUNTRIES.map((country) => (
+                            <option key={country.code} value={country.dialCode}>
+                              {country.flag} {country.dialCode}
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          type="tel"
+                          required
+                          value={formData.referent.telephone}
+                          onChange={(e) =>
+                            handleReferentChange("telephone", e.target.value)
+                          }
+                          placeholder="00 00 00 00"
+                          className="flex-1 px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                        Adresse
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.referent.adresse}
+                        onChange={(e) =>
+                          handleReferentChange("adresse", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Ligne 4: Ville, Pays */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                        Ville
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.referent.ville}
+                        onChange={(e) =>
+                          handleReferentChange("ville", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                        Pays<span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        required
+                        value={formData.referent.pays}
+                        onChange={(e) =>
+                          handleReferentChange("pays", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                      >
+                        <option value="">Sélectionner un pays</option>
+                        {COUNTRIES.map((country) => (
+                          <option key={country.code} value={country.name}>
+                            {country.flag} {country.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* ===== FORMULAIRE CONTRIBUTEUR (Infos personnelles) ===== */
+                <div className="space-y-4">
+                  {/* Ligne 1: Civilité, Nom, Prénom */}
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                        Civilité<span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        required
+                        value={formData.referent.civilite}
+                        onChange={(e) =>
+                          handleReferentChange("civilite", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                      >
+                        <option value="">Sélectionner</option>
+                        {CIVILITIES.map((civility) => (
+                          <option key={civility.value} value={civility.value}>
+                            {civility.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                        NOM<span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.referent.nom}
+                        onChange={(e) =>
+                          handleReferentChange("nom", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                        Prénom<span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.referent.prenom}
+                        onChange={(e) =>
+                          handleReferentChange("prenom", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Ligne 2: Profession, Email */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                        Profession<span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        required
+                        value={formData.referent.profession}
+                        onChange={(e) =>
+                          handleReferentChange("profession", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                      >
+                        <option value="">Sélectionner une profession</option>
+                        {PROFESSIONS.map((profession) => (
+                          <option key={profession} value={profession}>
+                            {profession}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                        E-mail<span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={formData.referent.email}
+                        onChange={(e) =>
+                          handleReferentChange("email", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Ligne 3: Téléphone, LinkedIn */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                        Téléphone<span className="text-red-500">*</span>
+                      </label>
+                      <div className="flex gap-2">
+                        <select
+                          value={formData.referent.countryCode}
+                          onChange={(e) =>
+                            handleReferentChange("countryCode", e.target.value)
+                          }
+                          className="w-28 px-2 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                        >
+                          {COUNTRIES.map((country) => (
+                            <option key={country.code} value={country.dialCode}>
+                              {country.flag} {country.dialCode}
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          type="tel"
+                          required
+                          value={formData.referent.telephone}
+                          onChange={(e) =>
+                            handleReferentChange("telephone", e.target.value)
+                          }
+                          placeholder="00 00 00 00"
+                          className="flex-1 px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                        Profil LinkedIn
+                      </label>
+                      <input
+                        type="url"
+                        placeholder="https://linkedin.com/in/votre-profil"
+                        value={formData.referent.linkedin}
+                        onChange={(e) =>
+                          handleReferentChange("linkedin", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Ligne 4: Domaines d'expertise (pleine largeur) */}
+                  <div>
                     <label className="block text-sm font-medium text-neutral-700 mb-1.5">
                       Domaines d&apos;expertise
                       <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Ex: Data Science, Cloud Computing, IA, Cybersécurité..."
-                      value={formData.referent.expertise}
-                      onChange={(e) =>
-                        handleReferentChange("expertise", e.target.value)
-                      }
-                      className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
-                    />
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setIsExpertiseDropdownOpen(!isExpertiseDropdownOpen)
+                        }
+                        className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent text-left flex items-center justify-between"
+                      >
+                        <span
+                          className={
+                            formData.referent.expertises.length > 0
+                              ? "text-neutral-900"
+                              : "text-neutral-500"
+                          }
+                        >
+                          {formData.referent.expertises.length > 0
+                            ? `${formData.referent.expertises.length} domaine(s) sélectionné(s)`
+                            : "Sélectionner vos domaines d'expertise"}
+                        </span>
+                        <ChevronDown
+                          className={`w-4 h-4 text-neutral-400 transition-transform ${isExpertiseDropdownOpen ? "rotate-180" : ""}`}
+                        />
+                      </button>
+
+                      {isExpertiseDropdownOpen && (
+                        <div className="absolute z-10 mt-1 w-full bg-white border border-neutral-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                          {EXPERTISE_DOMAINS.map((domain) => (
+                            <label
+                              key={domain.value}
+                              className="flex items-center gap-3 px-4 py-2 hover:bg-neutral-50 cursor-pointer"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={formData.referent.expertises.includes(
+                                  domain.value,
+                                )}
+                                onChange={() => toggleExpertise(domain.value)}
+                                className="w-4 h-4 rounded border-neutral-300 text-[#0077B6] focus:ring-[#0077B6]"
+                              />
+                              <span className="text-sm text-neutral-700">
+                                {domain.label}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {/* Tags sélectionnés */}
+                    {formData.referent.expertises.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {formData.referent.expertises.map((exp) => {
+                          const domain = EXPERTISE_DOMAINS.find(
+                            (d) => d.value === exp,
+                          );
+                          return (
+                            <span
+                              key={exp}
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-[#0077B6]/10 text-[#0077B6] rounded-full text-xs"
+                            >
+                              {domain?.label}
+                              <button
+                                type="button"
+                                onClick={() => toggleExpertise(exp)}
+                                className="hover:text-[#0077B6]/70"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                )}
 
-                <div className={isOrganisation ? "md:col-span-2" : ""}>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">
-                    E-mail<span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.referent.email}
-                    onChange={(e) =>
-                      handleReferentChange("email", e.target.value)
-                    }
-                    className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">
-                    Téléphone<span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    value={formData.referent.telephone}
-                    onChange={(e) =>
-                      handleReferentChange("telephone", e.target.value)
-                    }
-                    className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
-                  />
-                </div>
-
-                {!isOrganisation && (
-                  <div className="md:col-span-2">
+                  {/* Ligne 5: CV */}
+                  <div>
                     <label className="block text-sm font-medium text-neutral-700 mb-1.5">
-                      Profil LinkedIn
+                      CV (PDF, DOC)
                     </label>
-                    <input
-                      type="url"
-                      placeholder="https://linkedin.com/in/votre-profil"
-                      value={formData.referent.linkedin}
-                      onChange={(e) =>
-                        handleReferentChange("linkedin", e.target.value)
-                      }
-                      className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
-                    />
+                    <div className="flex items-center gap-3">
+                      <label className="px-4 py-2.5 bg-neutral-100 text-neutral-700 rounded-md text-sm font-medium cursor-pointer hover:bg-neutral-200 transition-colors flex items-center gap-2">
+                        <Upload className="w-4 h-4" />
+                        Choisir un fichier
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx"
+                          onChange={handleCvChange}
+                          className="hidden"
+                        />
+                      </label>
+                      <span className="text-sm text-neutral-500 truncate max-w-[200px]">
+                        {cvFileName || "Aucun fichier sélectionné"}
+                      </span>
+                    </div>
                   </div>
-                )}
 
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">
-                    Adresse
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.referent.adresse}
-                    onChange={(e) =>
-                      handleReferentChange("adresse", e.target.value)
-                    }
-                    className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
-                  />
+                  {/* Ligne 6: Adresse, Ville, Pays */}
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                        Adresse
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.referent.adresse}
+                        onChange={(e) =>
+                          handleReferentChange("adresse", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                        Ville
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.referent.ville}
+                        onChange={(e) =>
+                          handleReferentChange("ville", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                        Pays<span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        required
+                        value={formData.referent.pays}
+                        onChange={(e) =>
+                          handleReferentChange("pays", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                      >
+                        <option value="">Sélectionner un pays</option>
+                        {COUNTRIES.map((country) => (
+                          <option key={country.code} value={country.name}>
+                            {country.flag} {country.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">
-                    Ville
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.referent.ville}
-                    onChange={(e) =>
-                      handleReferentChange("ville", e.target.value)
-                    }
-                    className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">
-                    Pays<span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    required
-                    value={formData.referent.pays}
-                    onChange={(e) =>
-                      handleReferentChange("pays", e.target.value)
-                    }
-                    className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
-                  >
-                    <option value="">Sélectionner un pays</option>
-                    {COUNTRIES.map((country) => (
-                      <option key={country.code} value={country.name}>
-                        {country.flag} {country.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+              )}
             </motion.div>
 
             {/* ========== SECTION 4: Facturation ========== */}
@@ -928,15 +1501,31 @@ function CandidaturePageContent() {
                   <label className="block text-sm font-medium text-neutral-700 mb-1.5">
                     Téléphone<span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="tel"
-                    required
-                    value={formData.facturation.telephone}
-                    onChange={(e) =>
-                      handleFacturationChange("telephone", e.target.value)
-                    }
-                    className="w-full px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
-                  />
+                  <div className="flex gap-2">
+                    <select
+                      value={formData.facturation.countryCode}
+                      onChange={(e) =>
+                        handleFacturationChange("countryCode", e.target.value)
+                      }
+                      className="w-28 px-2 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                    >
+                      {COUNTRIES.map((country) => (
+                        <option key={country.code} value={country.dialCode}>
+                          {country.flag} {country.dialCode}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="tel"
+                      required
+                      value={formData.facturation.telephone}
+                      onChange={(e) =>
+                        handleFacturationChange("telephone", e.target.value)
+                      }
+                      placeholder="00 00 00 00"
+                      className="flex-1 px-4 py-2.5 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-transparent"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1.5">
