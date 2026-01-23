@@ -1,71 +1,92 @@
 // ============================================================
-// TYPES DASHBOARD - imo2tun
+// TYPES DASHBOARD API - imo2tun
 // ============================================================
 
 /**
- * Quota d'utilisation d'un service
+ * Utilisateur retourné par l'API dashboard
  */
-export interface QuotaItem {
+export interface DashboardUser {
   id: string;
-  label: string;
-  used: number;
-  total: number;
-  type: "expertise" | "downloads" | "presentations" | "projects";
-}
-
-/**
- * Événement inscrit par le membre
- */
-export interface UserEvent {
-  id: string;
-  title: string;
-  date: string;
-  time: string;
-  location: string;
-  image: string;
-  status: "confirmed" | "pending" | "cancelled";
-}
-
-/**
- * Avantage du tier membre
- */
-export interface MemberAdvantage {
-  id: string;
-  label: string;
-  description?: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  countryCode: string | null;
+  phone: string | null;
+  country: string | null;
+  city: string | null;
+  address: string | null;
+  civility: string | null;
+  role: "ROLE_GUEST" | "ROLE_MEMBER" | "ROLE_ADMIN" | "ROLE_SUPER_ADMIN";
+  accountType: "INDIVIDUAL" | "ORGANIZATION";
+  profilePicture: string | null;
+  linkedinProfileUrl: string | null;
+  bio: string | null;
+  expertise: string[];
+  profession: string | null;
+  emailVerified: boolean;
   active: boolean;
+  mentor: boolean;
+  memberType: string | null;
+  membershipTierId: string | null;
+  membershipTierName: string | null;
+  membershipEndDate: string | null;
+  membershipStartDate: string | null;
+  lastLoginAt: string;
+  createdAt: string;
 }
 
 /**
- * Informations d'adhésion
+ * Adhésion active
  */
-export interface MembershipInfo {
-  tier: "Asuka" | "Sunun" | "Mindaho" | "Dah";
-  tierColor: string;
-  memberType: "Offreur" | "Utilisateur" | "Contributeur" | "Partenaire";
-  memberSince: string;
-  expiresAt?: string;
-  autoRenew: boolean;
+export interface ActiveMembership {
+  memberType:
+    | "FREEMIUM"
+    | "OFFREUR"
+    | "UTILISATEUR"
+    | "CONTRIBUTEUR"
+    | "PARTENAIRE";
+  membershipTierId: string;
+  membershipEndDate: string;
+  membershipStartDate: string;
+  tierName: string;
+  eventDiscountPercent: number;
 }
 
 /**
- * Données complètes du dashboard
+ * Organisation de l'utilisateur (si applicable)
  */
-export interface DashboardData {
-  quotas: QuotaItem[];
-  upcomingEvents: UserEvent[];
-  advantages: MemberAdvantage[];
-  membership: MembershipInfo;
-  notifications: {
-    unread: number;
-  };
+export interface UserOrganization {
+  id: string;
+  name: string;
+  logo: string | null;
+  role: "OWNER" | "MEMBER";
 }
 
 /**
- * État du dashboard dans le hook
+ * Candidature d'adhésion
+ */
+export interface MembershipApplication {
+  id: string;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "PAYMENT_PENDING";
+  createdAt: string;
+  tierName: string;
+}
+
+/**
+ * Réponse complète de l'API dashboard
+ */
+export interface DashboardApiResponse {
+  user: DashboardUser;
+  activeMembership: ActiveMembership | null;
+  myOrganization: UserOrganization | null;
+  myApplications: MembershipApplication[];
+}
+
+/**
+ * État du hook useDashboard
  */
 export interface DashboardState {
-  data: DashboardData | null;
+  data: DashboardApiResponse | null;
   isLoading: boolean;
   error: string | null;
 }
