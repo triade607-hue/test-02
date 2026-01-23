@@ -17,6 +17,8 @@ import {
   AlertCircle,
   Euro,
   Linkedin,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 
 // Components
@@ -50,6 +52,12 @@ export default function EventDetailPage({
   const { isAuthenticated } = useAuth();
   const [isRegistering, setIsRegistering] = useState(false);
 
+  // ========== NOUVEAU : State pour le message de feedback ==========
+  const [feedbackMessage, setFeedbackMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
   // Hook pour les événements
   const { event, events, isLoading, error, fetchEventBySlug, fetchEvents } =
     useEvents();
@@ -81,13 +89,38 @@ export default function EventDetailPage({
         // Effectuer l'inscription
         try {
           setIsRegistering(true);
+          setFeedbackMessage(null); // Reset message
           const response = await eventsService.registerToEvent(event.id);
+
+          // ✅ Succès
+          setFeedbackMessage({
+            type: "success",
+            text: "Inscription confirmée ! Vous recevrez un email de confirmation.",
+          });
 
           if (response.paymentRedirectUrl) {
             window.location.href = response.paymentRedirectUrl;
           }
-        } catch (error) {
-          console.error("Erreur lors de l'inscription automatique:", error);
+        } catch (err: unknown) {
+          // ❌ Erreur
+          let errorText = "Une erreur est survenue. Veuillez réessayer.";
+
+          if (err && typeof err === "object" && "message" in err) {
+            const apiError = err as { message?: string };
+            const msg = (apiError.message || "").toLowerCase();
+
+            if (msg.includes("already registered")) {
+              errorText = "Vous êtes déjà inscrit à cet événement.";
+            } else if (msg.includes("event is full")) {
+              errorText = "Cet événement est complet.";
+            } else if (msg.includes("registration closed")) {
+              errorText = "Les inscriptions sont fermées.";
+            } else if (apiError.message) {
+              errorText = apiError.message;
+            }
+          }
+
+          setFeedbackMessage({ type: "error", text: errorText });
         } finally {
           setIsRegistering(false);
         }
@@ -128,6 +161,9 @@ export default function EventDetailPage({
   const handleRegister = async () => {
     if (!event) return;
 
+    // Reset le message précédent
+    setFeedbackMessage(null);
+
     // Si non connecté → sauvegarder l'intention et rediriger vers login
     if (!isAuthenticated) {
       localStorage.setItem("pendingEventRegistration", event.id);
@@ -140,12 +176,36 @@ export default function EventDetailPage({
       setIsRegistering(true);
       const response = await eventsService.registerToEvent(event.id);
 
+      // ✅ Succès
+      setFeedbackMessage({
+        type: "success",
+        text: "Inscription confirmée ! Vous recevrez un email de confirmation.",
+      });
+
       // Rediriger vers la page de paiement
       if (response.paymentRedirectUrl) {
         window.location.href = response.paymentRedirectUrl;
       }
-    } catch (error) {
-      console.error("Erreur lors de l'inscription:", error);
+    } catch (err: unknown) {
+      // ❌ Erreur - extraire le message user-friendly
+      let errorText = "Une erreur est survenue. Veuillez réessayer.";
+
+      if (err && typeof err === "object" && "message" in err) {
+        const apiError = err as { message?: string };
+        const msg = (apiError.message || "").toLowerCase();
+
+        if (msg.includes("already registered")) {
+          errorText = "Vous êtes déjà inscrit à cet événement.";
+        } else if (msg.includes("event is full")) {
+          errorText = "Cet événement est complet.";
+        } else if (msg.includes("registration closed")) {
+          errorText = "Les inscriptions sont fermées.";
+        } else if (apiError.message) {
+          errorText = apiError.message;
+        }
+      }
+
+      setFeedbackMessage({ type: "error", text: errorText });
     } finally {
       setIsRegistering(false);
     }
@@ -276,8 +336,11 @@ export default function EventDetailPage({
                   </div>
                   <div>
                     <p className="text-sm text-neutral-500">Places</p>
-                    <p className="font-semibold text-neutral-900">
+                    {/* <p className="font-semibold text-neutral-900">
                       {event.remainingSeats} / {event.maxAttendees} disponibles
+                    </p> */}
+                    <p className="font-semibold text-neutral-900">
+                      {event.maxAttendees} disponibles
                     </p>
                   </div>
                 </div>
@@ -299,6 +362,34 @@ export default function EventDetailPage({
 
                 {/* Séparateur + Bouton inscription */}
                 <div className="border-t border-neutral-200 pt-5">
+                  {/* ========== NOUVEAU : Message de feedback ========== */}
+                  {feedbackMessage && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`mb-4 p-4 rounded-lg flex items-start gap-3 ${
+                        feedbackMessage.type === "success"
+                          ? "bg-accent-50 border border-accent-200"
+                          : "bg-red-50 border border-red-200"
+                      }`}
+                    >
+                      {feedbackMessage.type === "success" ? (
+                        <CheckCircle className="w-5 h-5 text-accent-600 flex-shrink-0 mt-0.5" />
+                      ) : (
+                        <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                      )}
+                      <p
+                        className={`text-sm font-medium ${
+                          feedbackMessage.type === "success"
+                            ? "text-accent-700"
+                            : "text-red-700"
+                        }`}
+                      >
+                        {feedbackMessage.text}
+                      </p>
+                    </motion.div>
+                  )}
+
                   {/* Bouton S'inscrire */}
                   {event.upcoming && event.remainingSeats > 0 && (
                     <Button

@@ -2,6 +2,7 @@
 
 // ============================================================
 // CONTEXT D'AUTHENTIFICATION - imo2tun
+// Version centralisée - Écoute les événements de tokens
 // ============================================================
 
 import {
@@ -91,6 +92,110 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return "Une erreur inattendue est survenue";
   };
 
+  // ==================== GESTION CENTRALISÉE DE LA DÉCONNEXION ====================
+
+  /**
+   * Réinitialise l'état d'authentification
+   * Appelé quand les tokens sont supprimés ou expirés
+   */
+  const resetAuthState = useCallback(() => {
+    setState({
+      user: null,
+      accessToken: null,
+      refreshToken: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: null,
+    });
+  }, []);
+
+  // ==================== ÉCOUTE DES ÉVÉNEMENTS DE TOKENS ====================
+
+  useEffect(() => {
+    /**
+     * Écoute l'événement "auth:tokens-cleared"
+     * Émis par clearTokens() dans client.ts
+     */
+    const handleTokensCleared = () => {
+      console.log("[AuthContext] Tokens cleared - resetting state");
+      resetAuthState();
+    };
+
+    /**
+     * Écoute l'événement "auth:session-expired"
+     * Émis quand le refresh token échoue
+     * Note: La redirection est gérée par le composant qui utilise useAuth (AuthGuard)
+     */
+    const handleSessionExpiredEvent = () => {
+      console.log("[AuthContext] Session expired - resetting state");
+      resetAuthState();
+
+      // Rediriger vers login (on utilise window.location car on ne peut pas
+      // utiliser useRouter dans un Provider sans risque de problèmes)
+      if (typeof window !== "undefined") {
+        window.location.href = "/login?expired=true";
+      }
+    };
+
+    /**
+     * Écoute les changements de localStorage depuis d'autres onglets
+     * (l'événement 'storage' ne se déclenche que pour les autres onglets)
+     */
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEYS.ACCESS_TOKEN && event.newValue === null) {
+        console.log("[AuthContext] Token removed from another tab");
+        resetAuthState();
+      }
+    };
+
+    // Ajouter les listeners
+    window.addEventListener("auth:tokens-cleared", handleTokensCleared);
+    window.addEventListener("auth:session-expired", handleSessionExpiredEvent);
+    window.addEventListener("storage", handleStorageChange);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener("auth:tokens-cleared", handleTokensCleared);
+      window.removeEventListener(
+        "auth:session-expired",
+        handleSessionExpiredEvent,
+      );
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, [resetAuthState]);
+
+  // ==================== VÉRIFICATION PÉRIODIQUE DU TOKEN ====================
+
+  useEffect(() => {
+    /**
+     * Vérifie périodiquement si le token existe toujours
+     * Utile si le token est supprimé manuellement (DevTools)
+     */
+    const checkTokenExists = () => {
+      const token = getAccessToken();
+
+      // Si on pense être authentifié mais le token n'existe plus
+      if (state.isAuthenticated && !token) {
+        console.log("[AuthContext] Token missing - resetting state");
+        resetAuthState();
+      }
+    };
+
+    // Vérifier toutes les 5 secondes (léger, pas de requête réseau)
+    const interval = setInterval(checkTokenExists, 5000);
+
+    // Vérifier aussi quand la fenêtre reprend le focus
+    const handleFocus = () => {
+      checkTokenExists();
+    };
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [state.isAuthenticated, resetAuthState]);
+
   // ==================== ACTIONS ====================
 
   /**
@@ -176,22 +281,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
    * Déconnexion
    */
   const logout = useCallback(() => {
-    authService.logout();
-    setState({
-      user: null,
-      accessToken: null,
-      refreshToken: null,
-      isAuthenticated: false,
-      isLoading: false,
-      error: null,
-    });
+    authService.logout(); // Appelle clearTokens() qui émet l'événement
+    // L'état sera réinitialisé par le listener "auth:tokens-cleared"
   }, []);
 
   /**
    * Mot de passe oublié
    */
   const forgotPassword = async (
-    payload: ForgotPasswordPayload
+    payload: ForgotPasswordPayload,
   ): Promise<void> => {
     setLoading(true);
     clearError();
@@ -209,7 +307,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
    * Réinitialisation du mot de passe
    */
   const resetPassword = async (
-    payload: ResetPasswordPayload
+    payload: ResetPasswordPayload,
   ): Promise<void> => {
     setLoading(true);
     clearError();
