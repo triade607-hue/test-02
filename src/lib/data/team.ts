@@ -18,49 +18,47 @@ export const team: TeamMember[] = [
     role: "Vice-Président/Amérique du Nord",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis at consequat sapien. Lorem ipsum dolor sit amet.",
-    avatar: "https://placehold.co/600@3x.png",
+    avatar: "/images/teams/placeholder.jpg",
     socials: {
       linkedin: "https://www.linkedin.com/in/gildas-gnidehou-b142b836/",
     },
   },
   {
     id: "3",
-    name: "Anne DOE",
-    role: "Responsable Communication",
+    name: "Grâce BAKILI",
+    role: "Vice-Présidente /Afrique Centrale",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis at consequat sapien. Lorem ipsum dolor sit amet.",
-    avatar:
-      "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=300&q=80",
+    avatar: "/images/teams/placeholder.jpg",
     socials: {
-      facebook: "https://facebook.com",
-      linkedin: "https://linkedin.com",
+      linkedin: "https://www.linkedin.com/in/grace-bakili-a17090152/",
     },
   },
-  {
-    id: "4",
-    name: "Jean DUPONT",
-    role: "Directeur Technique",
-    description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis at consequat sapien. Lorem ipsum dolor sit amet.",
-    avatar:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&q=80",
-    socials: {
-      linkedin: "https://linkedin.com",
-      instagram: "https://instagram.com",
-    },
-  },
-  {
-    id: "5",
-    name: "Marie CLAIRE",
-    role: "Responsable Partenariats",
-    description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis at consequat sapien. Lorem ipsum dolor sit amet.",
-    avatar:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&q=80",
-    socials: {
-      facebook: "https://facebook.com",
-      instagram: "https://instagram.com",
-      linkedin: "https://linkedin.com",
-    },
-  },
+  // {
+  //   id: "4",
+  //   name: "Jean DUPONT",
+  //   role: "Directeur Technique",
+  //   description:
+  //     "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis at consequat sapien. Lorem ipsum dolor sit amet.",
+  //   avatar:
+  //     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&q=80",
+  //   socials: {
+  //     linkedin: "https://linkedin.com",
+  //     instagram: "https://instagram.com",
+  //   },
+  // },
+  // {
+  //   id: "5",
+  //   name: "Marie CLAIRE",
+  //   role: "Responsable Partenariats",
+  //   description:
+  //     "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis at consequat sapien. Lorem ipsum dolor sit amet.",
+  //   avatar:
+  //     "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&q=80",
+  //   socials: {
+  //     facebook: "https://facebook.com",
+  //     instagram: "https://instagram.com",
+  //     linkedin: "https://linkedin.com",
+  //   },
+  // },
 ];
