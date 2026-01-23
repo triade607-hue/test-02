@@ -21,15 +21,24 @@ interface UseRedirectIfAuthenticatedReturn {
 
 /**
  * Récupère l'URL de redirection depuis plusieurs sources (par priorité) :
- * 1. Query param "redirect" dans l'URL (avec action si présent)
+ * 1. Query param "redirect" ou "returnUrl" dans l'URL (avec action si présent)
  * 2. sessionStorage "redirectAfterLogin"
  */
 function getRedirectUrl(): string | null {
   if (typeof window === "undefined") return null;
 
-  // 1. Query param "redirect" dans l'URL actuelle (priorité haute)
+  // 1. Query params dans l'URL actuelle (priorité haute)
   const urlParams = new URLSearchParams(window.location.search);
-  const redirectParam = urlParams.get("redirect");
+
+  // Supporter les deux formats : "redirect" (events) et "returnUrl" (candidature)
+  let redirectParam = urlParams.get("redirect");
+  if (!redirectParam) {
+    const returnUrl = urlParams.get("returnUrl");
+    if (returnUrl) {
+      // returnUrl est encodé, le décoder
+      redirectParam = decodeURIComponent(returnUrl);
+    }
+  }
 
   if (redirectParam) {
     // Préserver le query param "action" s'il existe (pour inscription événement)
