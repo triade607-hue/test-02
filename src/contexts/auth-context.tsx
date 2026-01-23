@@ -13,7 +13,6 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { useRouter, usePathname } from "next/navigation";
 import { authService } from "@/lib/services/auth.service";
 import { getAccessToken, clearTokens, STORAGE_KEYS } from "@/lib/api/client";
 import type {
@@ -59,9 +58,6 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-
   // État initial
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -113,17 +109,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     });
   }, []);
 
-  /**
-   * Gère la session expirée avec redirection vers login
-   */
-  const handleSessionExpired = useCallback(() => {
-    // Réinitialiser l'état
-    resetAuthState();
-
-    // Rediriger vers login (l'URL a déjà été sauvegardée par client.ts)
-    router.push("/login?expired=true");
-  }, [resetAuthState, router]);
-
   // ==================== ÉCOUTE DES ÉVÉNEMENTS DE TOKENS ====================
 
   useEffect(() => {
@@ -139,10 +124,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
     /**
      * Écoute l'événement "auth:session-expired"
      * Émis quand le refresh token échoue
+     * Note: La redirection est gérée par le composant qui utilise useAuth (AuthGuard)
      */
     const handleSessionExpiredEvent = () => {
-      console.log("[AuthContext] Session expired - redirecting to login");
-      handleSessionExpired();
+      console.log("[AuthContext] Session expired - resetting state");
+      resetAuthState();
+
+      // Rediriger vers login (on utilise window.location car on ne peut pas
+      // utiliser useRouter dans un Provider sans risque de problèmes)
+      if (typeof window !== "undefined") {
+        window.location.href = "/login?expired=true";
+      }
     };
 
     /**
@@ -170,7 +162,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       );
       window.removeEventListener("storage", handleStorageChange);
     };
-  }, [resetAuthState, handleSessionExpired]);
+  }, [resetAuthState]);
 
   // ==================== VÉRIFICATION PÉRIODIQUE DU TOKEN ====================
 

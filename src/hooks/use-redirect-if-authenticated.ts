@@ -6,7 +6,7 @@
 // Version corrigée - Gère sessionStorage, query params ET localStorage
 // ============================================================
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "./use-auth";
 
@@ -23,14 +23,17 @@ interface UseRedirectIfAuthenticatedReturn {
  * Récupère l'URL de redirection depuis plusieurs sources (par priorité) :
  * 1. Query param "redirect" dans l'URL (avec action si présent)
  * 2. sessionStorage "redirectAfterLogin"
- * 3. localStorage avec action pending (événement, candidature)
  */
-function getRedirectUrl(searchParams: URLSearchParams): string | null {
-  // 1. Query param "redirect" (priorité haute)
-  const redirectParam = searchParams.get("redirect");
+function getRedirectUrl(): string | null {
+  if (typeof window === "undefined") return null;
+
+  // 1. Query param "redirect" dans l'URL actuelle (priorité haute)
+  const urlParams = new URLSearchParams(window.location.search);
+  const redirectParam = urlParams.get("redirect");
+
   if (redirectParam) {
     // Préserver le query param "action" s'il existe (pour inscription événement)
-    const action = searchParams.get("action");
+    const action = urlParams.get("action");
     if (action) {
       // Vérifier si l'URL contient déjà des query params
       const separator = redirectParam.includes("?") ? "&" : "?";
@@ -45,10 +48,6 @@ function getRedirectUrl(searchParams: URLSearchParams): string | null {
     return sessionRedirect;
   }
 
-  // 3. localStorage - Pending event registration
-  // Si on a un pending registration mais pas de redirect param,
-  // on laisse la page par défaut et la page événement gérera
-
   return null;
 }
 
@@ -56,6 +55,7 @@ function getRedirectUrl(searchParams: URLSearchParams): string | null {
  * Nettoie toutes les données de redirection après utilisation
  */
 function clearRedirectData(): void {
+  if (typeof window === "undefined") return;
   sessionStorage.removeItem("redirectAfterLogin");
   // Note: On ne supprime PAS pendingEventRegistration ici
   // car la page événement en a besoin pour compléter l'inscription
@@ -66,11 +66,13 @@ export function useRedirectIfAuthenticated(
 ): UseRedirectIfAuthenticatedReturn {
   const { redirectTo = "/membre" } = options;
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { isAuthenticated, isLoading } = useAuth();
 
   // État local pour tracker si on a déjà fait la vérification initiale
   const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
+
+  // Ref pour éviter les redirections multiples
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
     // Ne rien faire tant que le contexte charge la session initiale
@@ -81,10 +83,21 @@ export function useRedirectIfAuthenticated(
       setHasCheckedAuth(true);
     }
 
+    // Éviter les redirections multiples
+    if (hasRedirected.current) return;
+
     // Rediriger si authentifié
     if (isAuthenticated) {
-      // Chercher l'URL de redirection
-      const savedRedirect = getRedirectUrl(searchParams);
+      hasRedirected.current = true;
+
+      // Chercher l'URL de redirection (lecture directe depuis window.location)
+      const savedRedirect = getRedirectUrl();
+
+      // Debug log
+      console.log(
+        "[useRedirectIfAuthenticated] Authenticated, redirect URL:",
+        savedRedirect,
+      );
 
       if (savedRedirect) {
         clearRedirectData();
@@ -93,14 +106,7 @@ export function useRedirectIfAuthenticated(
         router.replace(redirectTo);
       }
     }
-  }, [
-    isAuthenticated,
-    isLoading,
-    router,
-    redirectTo,
-    hasCheckedAuth,
-    searchParams,
-  ]);
+  }, [isAuthenticated, isLoading, router, redirectTo, hasCheckedAuth]);
 
   return {
     // On vérifie l'auth seulement au premier chargement
