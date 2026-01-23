@@ -25,6 +25,7 @@ import { useArticles } from "@/hooks/use-articles";
 
 // Utilitaires centralisés
 import { getFileUrl, getAvatarUrl } from "@/lib/utils/image-url";
+import { renderMarkdownContent } from "@/lib/utils/render-markdown";
 
 // ==================== HELPERS ====================
 
@@ -40,52 +41,6 @@ function formatDate(dateString: string): string {
   });
 }
 
-/**
- * Rendre le contenu markdown simplifié
- */
-function renderContent(content: string): React.ReactNode {
-  const lines = content.trim().split("\n");
-  const elements: React.ReactNode[] = [];
-  let currentParagraph: string[] = [];
-
-  const flushParagraph = () => {
-    if (currentParagraph.length > 0) {
-      elements.push(
-        <p
-          key={elements.length}
-          className="text-neutral-700 leading-relaxed mb-6"
-        >
-          {currentParagraph.join(" ")}
-        </p>,
-      );
-      currentParagraph = [];
-    }
-  };
-
-  lines.forEach((line) => {
-    const trimmedLine = line.trim();
-
-    if (trimmedLine.startsWith("## ")) {
-      flushParagraph();
-      const title = trimmedLine.slice(3);
-      elements.push(
-        <h2
-          key={elements.length}
-          className="text-xl font-bold text-neutral-900 mt-10 mb-4"
-        >
-          {title}
-        </h2>,
-      );
-    } else if (trimmedLine === "") {
-      flushParagraph();
-    } else {
-      currentParagraph.push(trimmedLine);
-    }
-  });
-
-  flushParagraph();
-  return elements;
-}
 
 // ==================== PAGE COMPONENT ====================
 
@@ -286,7 +241,7 @@ export default function ArticleDetailPage({
                 transition={{ delay: 0.2 }}
                 className="prose prose-lg max-w-none"
               >
-                {renderContent(article.content)}
+                {renderMarkdownContent(article.content)}
               </motion.div>
 
               {/* Tags */}
