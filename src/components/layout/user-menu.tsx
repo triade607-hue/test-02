@@ -64,7 +64,7 @@ export function UserMenu({ variant = "light", className }: UserMenuProps) {
           "focus:outline-none",
           isDark
             ? "bg-white/10 hover:bg-white/20 text-white"
-            : "bg-neutral-100 hover:bg-neutral-200 text-neutral-700"
+            : "bg-neutral-100 hover:bg-neutral-200 text-neutral-700",
         )}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
@@ -73,14 +73,16 @@ export function UserMenu({ variant = "light", className }: UserMenuProps) {
         <div
           className={cn(
             "w-6 h-6 rounded-full flex items-center justify-center",
-            "bg-gradient-to-br from-[#26A69A] to-[#0077B6]"
+            "bg-gradient-to-br from-[#26A69A] to-[#0077B6]",
           )}
         >
           <User className="w-3.5 h-3.5 text-white" />
         </div>
 
         {/* Label - toujours "Mon espace" */}
-        <span className="hidden sm:block">Mon espace</span>
+        <span className="hidden sm:block">
+          {isAuthenticated ? "Mon espace" : "S'identifier"}
+        </span>
       </motion.button>
 
       {/* Dropdown Menu */}

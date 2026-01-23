@@ -73,7 +73,7 @@ function clearRedirectData(): void {
 export function useRedirectIfAuthenticated(
   options: UseRedirectIfAuthenticatedOptions = {},
 ): UseRedirectIfAuthenticatedReturn {
-  const { redirectTo = "/membre" } = options;
+  const { redirectTo = "/" } = options;
   const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
 
