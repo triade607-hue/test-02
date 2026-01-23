@@ -8,20 +8,84 @@ import {
   Shield,
   Eye,
   EyeOff,
-  Mail,
-  Smartphone,
-  Globe,
-  Moon,
-  Sun,
   Lock,
   Trash2,
   AlertTriangle,
   ChevronRight,
   Loader2,
+  Clock,
+  Mail,
+  Smartphone,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils/format-validation";
 import { useProfile } from "@/hooks/use-profile";
 
+// ============================================================
+// COMPOSANT BADGE "BIENTÔT DISPONIBLE"
+// ============================================================
+function ComingSoonBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+      <Clock className="w-3 h-3" />
+      Bientôt
+    </span>
+  );
+}
+
+// ============================================================
+// COMPOSANT SECTION DÉSACTIVÉE
+// ============================================================
+function DisabledSection({
+  id,
+  title,
+  icon: Icon,
+  iconColor,
+  children,
+}: {
+  id: string;
+  title: string;
+  icon: React.ElementType;
+  iconColor: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      id={id}
+      className="relative bg-white rounded-md border border-neutral-100 p-6 opacity-60"
+    >
+      <div className="absolute inset-0 z-10 cursor-not-allowed rounded-md" />
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold text-neutral-500 flex items-center gap-2">
+          <Icon className={cn("w-5 h-5", iconColor)} />
+          {title}
+        </h3>
+        <ComingSoonBadge />
+      </div>
+      <div className="text-neutral-400">{children}</div>
+    </section>
+  );
+}
+
+// ============================================================
+// NAVIGATION CONFIG
+// ============================================================
+const NAV_ITEMS = [
+  { id: "security", label: "Sécurité", icon: Shield, available: true },
+  { id: "notifications", label: "Notifications", icon: Bell, available: false },
+  { id: "privacy", label: "Confidentialité", icon: Eye, available: false },
+  { id: "preferences", label: "Préférences", icon: Settings, available: false },
+  {
+    id: "danger",
+    label: "Zone de danger",
+    icon: AlertTriangle,
+    available: false,
+  },
+];
+
+// ============================================================
+// PAGE PARAMÈTRES
+// ============================================================
 export default function ParametresPage() {
   // Hook pour le changement de mot de passe
   const {
@@ -34,22 +98,6 @@ export default function ParametresPage() {
   } = useProfile();
 
   const [showPassword, setShowPassword] = useState(false);
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: false,
-    events: true,
-    newsletter: true,
-    updates: false,
-  });
-  const [privacy, setPrivacy] = useState({
-    profilePublic: true,
-    showEmail: false,
-    showPhone: false,
-  });
-  const [theme, setTheme] = useState("light");
-  const [language, setLanguage] = useState("fr");
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-
   const [passwordForm, setPasswordForm] = useState({
     current: "",
     new: "",
@@ -130,28 +178,33 @@ export default function ParametresPage() {
         >
           <div className="bg-white rounded-md border border-neutral-100 p-2">
             <nav className="space-y-1">
-              {[
-                { id: "notifications", label: "Notifications", icon: Bell },
-                { id: "security", label: "Sécurité", icon: Shield },
-                { id: "privacy", label: "Confidentialité", icon: Eye },
-                { id: "preferences", label: "Préférences", icon: Settings },
-                { id: "danger", label: "Zone de danger", icon: AlertTriangle },
-              ].map((item) => (
-                <a
-                  key={item.id}
-                  href={`#${item.id}`}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium transition-all",
-                    item.id === "danger"
-                      ? "text-red-600 hover:bg-red-50"
-                      : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
-                  )}
-                >
-                  <item.icon className="w-5 h-5" />
-                  <span>{item.label}</span>
-                  <ChevronRight className="w-4 h-4 ml-auto" />
-                </a>
-              ))}
+              {NAV_ITEMS.map((item) =>
+                item.available ? (
+                  <a
+                    key={item.id}
+                    href={`#${item.id}`}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium transition-all",
+                      item.id === "danger"
+                        ? "text-red-600 hover:bg-red-50"
+                        : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900",
+                    )}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    <span className="flex-1">{item.label}</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </a>
+                ) : (
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium text-neutral-400 cursor-not-allowed"
+                  >
+                    <item.icon className="w-5 h-5" />
+                    <span className="flex-1">{item.label}</span>
+                    <ComingSoonBadge />
+                  </div>
+                ),
+              )}
             </nav>
           </div>
         </motion.div>
@@ -163,151 +216,7 @@ export default function ParametresPage() {
           transition={{ duration: 0.4, delay: 0.2 }}
           className="lg:col-span-2 space-y-6"
         >
-          {/* Notifications */}
-          <section
-            id="notifications"
-            className="bg-white rounded-md border border-neutral-100 p-6"
-          >
-            <h3 className="font-semibold text-neutral-900 flex items-center gap-2 mb-4">
-              <Bell className="w-5 h-5 text-primary-500" />
-              Notifications
-            </h3>
-            <div className="space-y-4">
-              {/* Email notifications */}
-              <div className="flex items-center justify-between py-3 border-b border-neutral-100">
-                <div className="flex items-center gap-3">
-                  <Mail className="w-5 h-5 text-neutral-400" />
-                  <div>
-                    <p className="font-medium text-neutral-900">
-                      Notifications par email
-                    </p>
-                    <p className="text-sm text-neutral-500">
-                      Recevez les notifications importantes par email
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() =>
-                    setNotifications({
-                      ...notifications,
-                      email: !notifications.email,
-                    })
-                  }
-                  className={cn(
-                    "relative w-12 h-6 rounded-full transition-colors",
-                    notifications.email ? "bg-primary-500" : "bg-neutral-200"
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm",
-                      notifications.email ? "translate-x-7" : "translate-x-1"
-                    )}
-                  />
-                </button>
-              </div>
-
-              {/* Push notifications */}
-              <div className="flex items-center justify-between py-3 border-b border-neutral-100">
-                <div className="flex items-center gap-3">
-                  <Smartphone className="w-5 h-5 text-neutral-400" />
-                  <div>
-                    <p className="font-medium text-neutral-900">
-                      Notifications push
-                    </p>
-                    <p className="text-sm text-neutral-500">
-                      Recevez des notifications sur votre appareil
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() =>
-                    setNotifications({
-                      ...notifications,
-                      push: !notifications.push,
-                    })
-                  }
-                  className={cn(
-                    "relative w-12 h-6 rounded-full transition-colors",
-                    notifications.push ? "bg-primary-500" : "bg-neutral-200"
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm",
-                      notifications.push ? "translate-x-7" : "translate-x-1"
-                    )}
-                  />
-                </button>
-              </div>
-
-              {/* Event reminders */}
-              <div className="flex items-center justify-between py-3 border-b border-neutral-100">
-                <div>
-                  <p className="font-medium text-neutral-900">
-                    Rappels d&apos;événements
-                  </p>
-                  <p className="text-sm text-neutral-500">
-                    Soyez notifié avant vos événements
-                  </p>
-                </div>
-                <button
-                  onClick={() =>
-                    setNotifications({
-                      ...notifications,
-                      events: !notifications.events,
-                    })
-                  }
-                  className={cn(
-                    "relative w-12 h-6 rounded-full transition-colors",
-                    notifications.events ? "bg-primary-500" : "bg-neutral-200"
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm",
-                      notifications.events ? "translate-x-7" : "translate-x-1"
-                    )}
-                  />
-                </button>
-              </div>
-
-              {/* Newsletter */}
-              <div className="flex items-center justify-between py-3">
-                <div>
-                  <p className="font-medium text-neutral-900">Newsletter</p>
-                  <p className="text-sm text-neutral-500">
-                    Recevez nos actualités et offres
-                  </p>
-                </div>
-                <button
-                  onClick={() =>
-                    setNotifications({
-                      ...notifications,
-                      newsletter: !notifications.newsletter,
-                    })
-                  }
-                  className={cn(
-                    "relative w-12 h-6 rounded-full transition-colors",
-                    notifications.newsletter
-                      ? "bg-primary-500"
-                      : "bg-neutral-200"
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm",
-                      notifications.newsletter
-                        ? "translate-x-7"
-                        : "translate-x-1"
-                    )}
-                  />
-                </button>
-              </div>
-            </div>
-          </section>
-
-          {/* Security */}
+          {/* ==================== SÉCURITÉ (FONCTIONNEL) ==================== */}
           <section
             id="security"
             className="bg-white rounded-md border border-neutral-100 p-6"
@@ -321,7 +230,7 @@ export default function ParametresPage() {
                 Modifiez votre mot de passe pour sécuriser votre compte
               </p>
 
-              {/* Current password */}
+              {/* Mot de passe actuel */}
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1.5">
                   Mot de passe actuel
@@ -352,7 +261,7 @@ export default function ParametresPage() {
                 </div>
               </div>
 
-              {/* New password */}
+              {/* Nouveau mot de passe */}
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1.5">
                   Nouveau mot de passe
@@ -367,7 +276,7 @@ export default function ParametresPage() {
                 />
               </div>
 
-              {/* Confirm password */}
+              {/* Confirmer mot de passe */}
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1.5">
                   Confirmer le mot de passe
@@ -402,234 +311,93 @@ export default function ParametresPage() {
             </div>
           </section>
 
-          {/* Privacy */}
-          <section
+          {/* ==================== NOTIFICATIONS (BIENTÔT) ==================== */}
+          <DisabledSection
+            id="notifications"
+            title="Notifications"
+            icon={Bell}
+            iconColor="text-primary-500"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <Mail className="w-4 h-4" />
+                <span className="text-sm">Notifications par email</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Smartphone className="w-4 h-4" />
+                <span className="text-sm">Notifications push</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Bell className="w-4 h-4" />
+                <span className="text-sm">Rappels d&apos;événements</span>
+              </div>
+            </div>
+          </DisabledSection>
+
+          {/* ==================== CONFIDENTIALITÉ (BIENTÔT) ==================== */}
+          <DisabledSection
             id="privacy"
-            className="bg-white rounded-md border border-neutral-100 p-6"
+            title="Confidentialité"
+            icon={Eye}
+            iconColor="text-secondary-500"
           >
-            <h3 className="font-semibold text-neutral-900 flex items-center gap-2 mb-4">
-              <Eye className="w-5 h-5 text-secondary-500" />
-              Confidentialité
-            </h3>
-            <div className="space-y-4">
-              {/* Profile public */}
-              <div className="flex items-center justify-between py-3 border-b border-neutral-100">
-                <div>
-                  <p className="font-medium text-neutral-900">Profil public</p>
-                  <p className="text-sm text-neutral-500">
-                    Permettre aux autres membres de voir votre profil
-                  </p>
-                </div>
-                <button
-                  onClick={() =>
-                    setPrivacy({
-                      ...privacy,
-                      profilePublic: !privacy.profilePublic,
-                    })
-                  }
-                  className={cn(
-                    "relative w-12 h-6 rounded-full transition-colors",
-                    privacy.profilePublic ? "bg-primary-500" : "bg-neutral-200"
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm",
-                      privacy.profilePublic ? "translate-x-7" : "translate-x-1"
-                    )}
-                  />
-                </button>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="text-sm">Profil public</span>
               </div>
-
-              {/* Show email */}
-              <div className="flex items-center justify-between py-3 border-b border-neutral-100">
-                <div>
-                  <p className="font-medium text-neutral-900">
-                    Afficher l&apos;email
-                  </p>
-                  <p className="text-sm text-neutral-500">
-                    Rendre votre email visible sur votre profil
-                  </p>
-                </div>
-                <button
-                  onClick={() =>
-                    setPrivacy({ ...privacy, showEmail: !privacy.showEmail })
-                  }
-                  className={cn(
-                    "relative w-12 h-6 rounded-full transition-colors",
-                    privacy.showEmail ? "bg-primary-500" : "bg-neutral-200"
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm",
-                      privacy.showEmail ? "translate-x-7" : "translate-x-1"
-                    )}
-                  />
-                </button>
+              <div className="flex items-center gap-3">
+                <span className="text-sm">Afficher l&apos;email</span>
               </div>
-
-              {/* Show phone */}
-              <div className="flex items-center justify-between py-3">
-                <div>
-                  <p className="font-medium text-neutral-900">
-                    Afficher le téléphone
-                  </p>
-                  <p className="text-sm text-neutral-500">
-                    Rendre votre téléphone visible sur votre profil
-                  </p>
-                </div>
-                <button
-                  onClick={() =>
-                    setPrivacy({ ...privacy, showPhone: !privacy.showPhone })
-                  }
-                  className={cn(
-                    "relative w-12 h-6 rounded-full transition-colors",
-                    privacy.showPhone ? "bg-primary-500" : "bg-neutral-200"
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm",
-                      privacy.showPhone ? "translate-x-7" : "translate-x-1"
-                    )}
-                  />
-                </button>
+              <div className="flex items-center gap-3">
+                <span className="text-sm">Afficher le téléphone</span>
               </div>
             </div>
-          </section>
+          </DisabledSection>
 
-          {/* Preferences */}
-          <section
+          {/* ==================== PRÉFÉRENCES (BIENTÔT) ==================== */}
+          <DisabledSection
             id="preferences"
-            className="bg-white rounded-md border border-neutral-100 p-6"
+            title="Préférences"
+            icon={Globe}
+            iconColor="text-accent-500"
           >
-            <h3 className="font-semibold text-neutral-900 flex items-center gap-2 mb-4">
-              <Settings className="w-5 h-5 text-neutral-500" />
-              Préférences
-            </h3>
-            <div className="space-y-4">
-              {/* Theme */}
-              <div className="flex items-center justify-between py-3 border-b border-neutral-100">
-                <div className="flex items-center gap-3">
-                  {theme === "light" ? (
-                    <Sun className="w-5 h-5 text-secondary-500" />
-                  ) : (
-                    <Moon className="w-5 h-5 text-primary-500" />
-                  )}
-                  <div>
-                    <p className="font-medium text-neutral-900">Thème</p>
-                    <p className="text-sm text-neutral-500">
-                      Choisissez l&apos;apparence de l&apos;interface
-                    </p>
-                  </div>
-                </div>
-                <select
-                  value={theme}
-                  onChange={(e) => setTheme(e.target.value)}
-                  className="px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value="light">Clair</option>
-                  <option value="dark">Sombre</option>
-                  <option value="system">Système</option>
-                </select>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="text-sm">Thème : Clair</span>
               </div>
-
-              {/* Language */}
-              <div className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3">
-                  <Globe className="w-5 h-5 text-neutral-400" />
-                  <div>
-                    <p className="font-medium text-neutral-900">Langue</p>
-                    <p className="text-sm text-neutral-500">
-                      Choisissez la langue de l&apos;interface
-                    </p>
-                  </div>
-                </div>
-                <select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  className="px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value="fr">Français</option>
-                  <option value="en">English</option>
-                </select>
+              <div className="flex items-center gap-3">
+                <span className="text-sm">Langue : Français</span>
               </div>
             </div>
-          </section>
+          </DisabledSection>
 
-          {/* Danger Zone */}
-          <section
+          {/* ==================== ZONE DE DANGER (BIENTÔT) ==================== */}
+          <DisabledSection
             id="danger"
-            className="bg-white rounded-md border border-red-200 p-6"
+            title="Zone de danger"
+            icon={AlertTriangle}
+            iconColor="text-red-500"
           >
-            <h3 className="font-semibold text-red-600 flex items-center gap-2 mb-4">
-              <AlertTriangle className="w-5 h-5" />
-              Zone de danger
-            </h3>
-            <p className="text-sm text-neutral-600 mb-4">
-              Attention : Ces actions sont irréversibles. Veuillez procéder avec
-              précaution.
-            </p>
-            <div className="flex items-center justify-between py-3 border-t border-neutral-100">
+            <div className="flex items-center justify-between py-2">
               <div>
-                <p className="font-medium text-neutral-900">
+                <p className="font-medium text-neutral-500 text-sm">
                   Supprimer mon compte
                 </p>
-                <p className="text-sm text-neutral-500">
+                <p className="text-xs text-neutral-400">
                   Supprime définitivement votre compte et toutes vos données
                 </p>
               </div>
               <button
-                onClick={() => setShowDeleteModal(true)}
-                className="px-4 py-2 bg-red-50 text-red-600 font-medium rounded-md hover:bg-red-100 transition-colors flex items-center gap-2"
+                disabled
+                className="px-4 py-2 bg-neutral-100 text-neutral-400 font-medium rounded-md cursor-not-allowed flex items-center gap-2"
               >
                 <Trash2 className="w-4 h-4" />
                 Supprimer
               </button>
             </div>
-          </section>
+          </DisabledSection>
         </motion.div>
       </div>
-
-      {/* Delete Modal */}
-      {showDeleteModal && (
-        <div
-          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-          onClick={() => setShowDeleteModal(false)}
-        >
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-white rounded-md p-6 max-w-md w-full"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-red-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-neutral-900">
-                Confirmer la suppression
-              </h3>
-            </div>
-            <p className="text-neutral-600 mb-6">
-              Cette action est irréversible. Toutes vos données, adhésions et
-              historiques seront définitivement supprimés.
-            </p>
-            <div className="flex items-center gap-3 justify-end">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 text-neutral-700 font-medium hover:bg-neutral-100 rounded-md transition-colors"
-              >
-                Annuler
-              </button>
-              <button className="px-4 py-2 bg-red-600 text-white font-medium rounded-md hover:bg-red-700 transition-colors">
-                Supprimer définitivement
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
     </div>
   );
 }

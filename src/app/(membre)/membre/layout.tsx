@@ -19,6 +19,8 @@ import {
   ChevronRight,
   Bell,
   Crown,
+  Clock,
+  LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils/format-validation";
 import { getFileUrl } from "@/lib/utils/image-url";
@@ -27,37 +29,52 @@ import { getFileUrl } from "@/lib/utils/image-url";
 import { useAuth } from "@/hooks/use-auth";
 import { AuthGuard } from "@/guards";
 
-// Navigation items
-const NAV_ITEMS = [
+// ============================================================
+// NAVIGATION ITEMS - avec statut disponibilité
+// ============================================================
+interface NavItem {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  available: boolean;
+}
+
+const NAV_ITEMS: NavItem[] = [
   {
     label: "Tableau de bord",
     href: "/membre",
     icon: LayoutDashboard,
+    available: true,
   },
   {
     label: "Mes événements",
     href: "/membre/evenements",
     icon: Calendar,
+    available: false, // Non disponible
   },
   {
     label: "Mes avantages",
     href: "/membre/avantages",
     icon: Gift,
+    available: false, // Non disponible
   },
   {
     label: "Bibliothèque",
     href: "/membre/bibliotheque",
     icon: FileText,
+    available: false, // Non disponible
   },
   {
     label: "Mon profil",
     href: "/membre/profil",
     icon: User,
+    available: true,
   },
   {
     label: "Paramètres",
     href: "/membre/parametres",
     icon: Settings,
+    available: true,
   },
 ];
 
@@ -78,6 +95,62 @@ const MEMBER_TYPE_LABELS: Record<string, string> = {
   PARTENAIRE: "Partenaire",
 };
 
+// ============================================================
+// COMPOSANT BADGE "BIENTÔT"
+// ============================================================
+function ComingSoonBadge() {
+  return (
+    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium rounded bg-amber-100 text-amber-700">
+      <Clock className="w-2.5 h-2.5" />
+      Bientôt
+    </span>
+  );
+}
+
+// ============================================================
+// COMPOSANT AVATAR (avec initiales si pas d'image)
+// ============================================================
+interface AvatarProps {
+  src?: string | null;
+  firstName: string;
+  lastName: string;
+  size?: "sm" | "md" | "lg";
+}
+
+function Avatar({ src, firstName, lastName, size = "md" }: AvatarProps) {
+  const initials = `${firstName[0] || ""}${lastName[0] || ""}`.toUpperCase();
+
+  const sizeClasses = {
+    sm: "w-8 h-8 text-xs",
+    md: "w-10 h-10 text-sm",
+    lg: "w-12 h-12 text-base",
+  };
+
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={`${firstName} ${lastName}`}
+        className={cn("rounded-full object-cover", sizeClasses[size])}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        "rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white font-semibold",
+        sizeClasses[size],
+      )}
+    >
+      {initials}
+    </div>
+  );
+}
+
+// ============================================================
+// LAYOUT PRINCIPAL
+// ============================================================
 export default function MembreLayout({
   children,
 }: {
@@ -131,14 +204,50 @@ export default function MembreLayout({
       : null,
   };
 
-  // Initiales
-  const initials =
-    `${displayUser.firstName[0] || ""}${displayUser.lastName[0] || ""}`.toUpperCase();
+  // ============================================================
+  // RENDU ITEM NAVIGATION
+  // ============================================================
+  const renderNavItem = (item: NavItem, isMobile: boolean = false) => {
+    const active = isActive(item.href);
+
+    // Item disponible
+    if (item.available) {
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          onClick={isMobile ? closeSidebar : undefined}
+          className={cn(
+            "flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium transition-all",
+            active
+              ? "bg-primary-50 text-primary-600"
+              : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900",
+          )}
+        >
+          <item.icon className="w-5 h-5" />
+          <span className="flex-1">{item.label}</span>
+          {active && <ChevronRight className="w-4 h-4" />}
+        </Link>
+      );
+    }
+
+    // Item non disponible (désactivé)
+    return (
+      <div
+        key={item.href}
+        className="flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium text-neutral-400 cursor-not-allowed"
+      >
+        <item.icon className="w-5 h-5" />
+        <span className="flex-1">{item.label}</span>
+        <ComingSoonBadge />
+      </div>
+    );
+  };
 
   return (
     <AuthGuard>
       <div className="min-h-screen bg-neutral-100">
-        {/* Sidebar Desktop */}
+        {/* ==================== SIDEBAR DESKTOP ==================== */}
         <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:w-64 lg:flex-col">
           <div className="flex flex-col flex-1 bg-white border-r border-neutral-200">
             {/* Logo */}
@@ -158,18 +267,13 @@ export default function MembreLayout({
             <div className="p-4">
               <div className="p-4 bg-gradient-to-r from-primary-50 to-accent-50 rounded-md">
                 <div className="flex items-center gap-3">
-                  {/* Avatar - Photo ou Initiales */}
-                  {displayUser.avatar ? (
-                    <img
-                      src={displayUser.avatar}
-                      alt={`${displayUser.firstName} ${displayUser.lastName}`}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white font-semibold">
-                      {initials}
-                    </div>
-                  )}
+                  {/* Avatar avec initiales */}
+                  <Avatar
+                    src={displayUser.avatar}
+                    firstName={displayUser.firstName}
+                    lastName={displayUser.lastName}
+                    size="lg"
+                  />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-neutral-900 truncate">
                       {displayUser.firstName} {displayUser.lastName}
@@ -217,24 +321,7 @@ export default function MembreLayout({
 
             {/* Navigation */}
             <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
-              {NAV_ITEMS.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium transition-all",
-                    isActive(item.href)
-                      ? "bg-primary-50 text-primary-600"
-                      : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900",
-                  )}
-                >
-                  <item.icon className="w-5 h-5" />
-                  <span>{item.label}</span>
-                  {isActive(item.href) && (
-                    <ChevronRight className="w-4 h-4 ml-auto" />
-                  )}
-                </Link>
-              ))}
+              {NAV_ITEMS.map((item) => renderNavItem(item))}
             </nav>
 
             {/* Logout */}
@@ -250,7 +337,7 @@ export default function MembreLayout({
           </div>
         </aside>
 
-        {/* Mobile Sidebar */}
+        {/* ==================== MOBILE SIDEBAR ==================== */}
         <AnimatePresence>
           {isSidebarOpen && (
             <>
@@ -293,36 +380,29 @@ export default function MembreLayout({
                 {/* User Card Mobile */}
                 <div className="p-4 border-b border-neutral-100">
                   <div className="flex items-center gap-3">
-                    {/* Avatar Mobile - Photo ou Initiales */}
-                    {displayUser.avatar ? (
-                      <img
-                        src={displayUser.avatar}
-                        alt={`${displayUser.firstName} ${displayUser.lastName}`}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white font-semibold text-sm">
-                        {initials}
-                      </div>
-                    )}
+                    {/* Avatar avec initiales */}
+                    <Avatar
+                      src={displayUser.avatar}
+                      firstName={displayUser.firstName}
+                      lastName={displayUser.lastName}
+                      size="md"
+                    />
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-neutral-900 text-sm truncate">
+                      <p className="font-medium text-neutral-900 truncate">
                         {displayUser.firstName} {displayUser.lastName}
                       </p>
-                      <div className="flex items-center gap-2">
-                        {displayUser.isFreemium ? (
-                          <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-neutral-200 text-neutral-600">
-                            Freemium
-                          </span>
-                        ) : displayUser.tier ? (
-                          <span
-                            className="px-2 py-0.5 text-xs font-medium rounded-md text-white"
-                            style={{ backgroundColor: displayUser.tierColor }}
-                          >
-                            {displayUser.tier}
-                          </span>
-                        ) : null}
-                      </div>
+                      {displayUser.isFreemium ? (
+                        <span className="text-xs text-neutral-500">
+                          Compte Freemium
+                        </span>
+                      ) : (
+                        <span
+                          className="text-xs font-medium"
+                          style={{ color: displayUser.tierColor }}
+                        >
+                          {displayUser.tier}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -341,22 +421,7 @@ export default function MembreLayout({
 
                 {/* Navigation Mobile */}
                 <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-                  {NAV_ITEMS.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={closeSidebar}
-                      className={cn(
-                        "flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium transition-all",
-                        isActive(item.href)
-                          ? "bg-primary-50 text-primary-600"
-                          : "text-neutral-600 hover:bg-neutral-50",
-                      )}
-                    >
-                      <item.icon className="w-5 h-5" />
-                      <span>{item.label}</span>
-                    </Link>
-                  ))}
+                  {NAV_ITEMS.map((item) => renderNavItem(item, true))}
                 </nav>
 
                 {/* Logout Mobile */}
@@ -377,7 +442,7 @@ export default function MembreLayout({
           )}
         </AnimatePresence>
 
-        {/* Main Content */}
+        {/* ==================== MAIN CONTENT ==================== */}
         <div className="lg:pl-64">
           {/* Top Header */}
           <header className="sticky top-0 z-30 bg-white border-b border-neutral-200">
@@ -417,25 +482,20 @@ export default function MembreLayout({
                         : displayUser.tier || displayUser.email}
                     </p>
                   </div>
-                  {/* Avatar Header - Photo ou Initiales */}
-                  {displayUser.avatar ? (
-                    <img
-                      src={displayUser.avatar}
-                      alt={`${displayUser.firstName} ${displayUser.lastName}`}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white font-semibold text-sm">
-                      {initials}
-                    </div>
-                  )}
+                  {/* Avatar avec initiales */}
+                  <Avatar
+                    src={displayUser.avatar}
+                    firstName={displayUser.firstName}
+                    lastName={displayUser.lastName}
+                    size="md"
+                  />
                 </div>
               </div>
             </div>
           </header>
 
           {/* Page Content */}
-          <main className="p-4 md:p-6 lg:p-8">{children}</main>
+          <main className="p-4 md:p-6">{children}</main>
         </div>
       </div>
     </AuthGuard>

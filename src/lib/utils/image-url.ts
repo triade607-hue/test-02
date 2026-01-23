@@ -7,8 +7,8 @@ import { API_BASE_URL } from "@/lib/api/endpoints";
 
 // ==================== PLACEHOLDERS ====================
 
-const PLACEHOLDER_IMAGE = "/images/placeholder-article.png";
-const PLACEHOLDER_AVATAR = "/images/placeholder-avatar.png";
+const PLACEHOLDER_IMAGE = "";
+const PLACEHOLDER_AVATAR = "";
 
 // ==================== HELPERS ====================
 
